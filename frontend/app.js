@@ -318,10 +318,23 @@ piqueInput.addEventListener("keydown", (e) => {
 });
 
 function addReplayButton(container) {
-  const btn = document.createElement("button");
-  btn.textContent = "Rejouer";
-  btn.addEventListener("click", () => window.location.reload());
-  container.appendChild(btn);
+  const row = document.createElement("div");
+  row.className = "end-actions";
+
+  const replayBtn = document.createElement("button");
+  replayBtn.textContent = "Rejouer";
+  replayBtn.addEventListener("click", () => window.location.reload());
+  row.appendChild(replayBtn);
+
+  const dashboardBtn = document.createElement("button");
+  dashboardBtn.textContent = "Voir le tableau de bord";
+  dashboardBtn.className = "btn-secondary";
+  dashboardBtn.addEventListener("click", () => {
+    window.location.href = "dashboard.html";
+  });
+  row.appendChild(dashboardBtn);
+
+  container.appendChild(row);
 }
 
 async function endGame() {
@@ -420,10 +433,12 @@ function renderSynthesis(data) {
   const playerRadarCol = document.createElement("div");
   playerRadarCol.innerHTML = '<p class="score-label">Joueur — thèmes des piques</p>';
   playerRadarCol.appendChild(buildRadarSvg(themeItems));
+  playerRadarCol.appendChild(buildRadarLegend(themeItems));
 
   const aiRadarCol = document.createElement("div");
   aiRadarCol.innerHTML = '<p class="score-label">IA — catégories de réponse</p>';
   aiRadarCol.appendChild(buildRadarSvg(categoryItems));
+  aiRadarCol.appendChild(buildRadarLegend(categoryItems));
 
   radarRow.appendChild(playerRadarCol);
   radarRow.appendChild(aiRadarCol);
@@ -509,6 +524,10 @@ function buildRadarSvg(items) {
     svg.appendChild(ring);
   });
 
+  // Pas de texte sur le dessin lui-même (les libellés longs comme "autonomie
+  // économique" ne peuvent pas retourner à la ligne dans un <text> SVG et se
+  // faisaient couper) : juste un repère numéroté court, la légende complète
+  // est affichée à côté en HTML normal (voir renderSynthesis).
   items.forEach((item, i) => {
     const [x2, y2] = pointOn(1, i);
     const axis = document.createElementNS(svgNS, "line");
@@ -519,14 +538,14 @@ function buildRadarSvg(items) {
     axis.setAttribute("class", "radar-axis");
     svg.appendChild(axis);
 
-    const [lx, ly] = pointOn(1.2, i);
+    const [lx, ly] = pointOn(1.12, i);
     const label = document.createElementNS(svgNS, "text");
     label.setAttribute("x", lx);
     label.setAttribute("y", ly);
     label.setAttribute("class", "radar-label");
     label.setAttribute("text-anchor", "middle");
     label.setAttribute("dominant-baseline", "middle");
-    label.textContent = item.label;
+    label.textContent = String(i + 1);
     svg.appendChild(label);
   });
 
@@ -537,6 +556,19 @@ function buildRadarSvg(items) {
   svg.appendChild(dataPolygon);
 
   return svg;
+}
+
+// Légende HTML des axes du radar (repère numéroté -> libellé complet) : du
+// texte normal, qui retourne à la ligne sans problème contrairement au SVG.
+function buildRadarLegend(items) {
+  const list = document.createElement("ol");
+  list.className = "radar-legend";
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item.label;
+    list.appendChild(li);
+  });
+  return list;
 }
 
 loadModels();
