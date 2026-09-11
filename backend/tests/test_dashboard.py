@@ -59,3 +59,32 @@ def test_dashboard_endpoint_aggregates_recorded_exchanges(tmp_path, monkeypatch)
     assert categories == {"contre_argument_ferme": 1, "concession_legitime": 1}
     assert len(data["theme_category_matrix"]) == 2
     assert len(data["timeline"]) == 1  # les deux échanges sont enregistrés le même jour
+
+
+def test_dashboard_endpoint_filters_by_model(tmp_path, monkeypatch):
+    monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
+
+    record_exchanges(
+        "mistral-small",
+        [PiqueAnalysis(index=0, theme="corps", specificity_score=2, specificity_comment="x")],
+        [ResponseAnalysis(index=0, category="contre_argument_ferme", explanation="x", ai_specificity_score=1, ai_specificity_comment="x")],
+    )
+    record_exchanges(
+        "gpt-oss",
+        [PiqueAnalysis(index=0, theme="émotions", specificity_score=1, specificity_comment="x")],
+        [ResponseAnalysis(index=0, category="concession_legitime", explanation="x", ai_specificity_score=2, ai_specificity_comment="x")],
+    )
+
+    client = TestClient(main.app)
+
+    res_all = client.get("/api/dashboard")
+    assert res_all.json()["total_exchanges"] == 2
+    assert res_all.json()["available_models"] == ["gpt-oss", "mistral-small"]
+    assert res_all.json()["selected_model"] is None
+
+    res_filtered = client.get("/api/dashboard", params={"model": "mistral-small"})
+    data = res_filtered.json()
+    assert data["selected_model"] == "mistral-small"
+    assert data["total_exchanges"] == 1
+    assert data["category_frequency"] == [{"category": "contre_argument_ferme", "count": 1}]
+    assert data["theme_category_matrix"] == [{"theme": "corps", "category": "contre_argument_ferme", "count": 1}]

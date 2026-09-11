@@ -11,6 +11,7 @@ const CATEGORY_LABELS = {
 };
 
 const contentEl = document.getElementById("dashboard-content");
+const modelFilterEl = document.getElementById("model-filter");
 
 function el(html) {
   const div = document.createElement("div");
@@ -98,17 +99,34 @@ function renderTimeline(timeline) {
   return el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2>${rows}</div>`);
 }
 
-async function loadDashboard() {
+function populateModelFilter(models, selected) {
+  // Ne repeuple que si ce n'est pas déjà fait, pour ne pas perturber une
+  // sélection en cours si l'utilisateur rouvre le menu pendant un refetch.
+  if (modelFilterEl.dataset.populated === "true") return;
+  models.forEach((m) => {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = m;
+    modelFilterEl.appendChild(opt);
+  });
+  modelFilterEl.value = selected || "";
+  modelFilterEl.dataset.populated = "true";
+}
+
+async function loadDashboard(model) {
   try {
-    const res = await fetch("/api/dashboard");
+    const url = model ? `/api/dashboard?model=${encodeURIComponent(model)}` : "/api/dashboard";
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+
+    populateModelFilter(data.available_models, data.selected_model);
 
     contentEl.innerHTML = "";
 
     if (data.total_exchanges === 0) {
       contentEl.appendChild(
-        el(`<p class="empty-state">Aucune partie enregistrée pour l'instant.</p>`)
+        el(`<p class="empty-state">Aucune partie enregistrée pour l'instant${model ? " pour ce modèle" : ""}.</p>`)
       );
       return;
     }
@@ -129,5 +147,9 @@ async function loadDashboard() {
     );
   }
 }
+
+modelFilterEl.addEventListener("change", () => {
+  loadDashboard(modelFilterEl.value || undefined);
+});
 
 loadDashboard();

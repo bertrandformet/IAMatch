@@ -15,9 +15,17 @@
   <p class="dashboard-intro">
     Statistiques agrégées et anonymisées sur l'ensemble des parties jouées, tous joueurs
     confondus. Aucune pique ni réponse n'est conservée telle quelle : seules la catégorie
-    thématique, le score argumentatif et la classification de sycophantie de chaque échange
-    sont comptabilisés.
+    thématique, le score de spécificité et la classification de sycophantie de chaque échange
+    sont comptabilisés. Le but est d'observer ce que chaque modèle répond — filtre par modèle
+    pour voir ses tendances propres plutôt qu'une moyenne qui les noierait.
   </p>
+
+  <div class="field">
+    <label for="model-filter">Modèle</label>
+    <select id="model-filter">
+      <option value="">Tous les modèles</option>
+    </select>
+  </div>
 
   <div id="dashboard-content">
     <p id="dashboard-loading">Chargement…</p>

@@ -17,6 +17,7 @@ import sqlite3
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 import httpx
 from dotenv import load_dotenv
@@ -401,37 +402,56 @@ async def game_synthesis(req: SynthesisRequest):
 
 
 @app.get("/api/dashboard")
-async def dashboard():
-    """Dashboard méta — agrégats publics et anonymes, tous modèles/parties
-    confondus. Aucune donnée individuelle : uniquement des comptages."""
+async def dashboard(model: Optional[str] = None):
+    """Dashboard méta — agrégats publics et anonymes. Sans `model`, agrège
+    toutes les parties/modèles confondus ; avec `model`, restreint tous les
+    agrégats (y compris l'évolution dans le temps) à ce seul modèle — le but
+    étant justement de pouvoir observer les tendances propres à chaque
+    modèle, pas seulement une moyenne globale qui les noie. Aucune donnée
+    individuelle : uniquement des comptages."""
+    where_clause = "WHERE model = ?" if model else ""
+    params: tuple = (model,) if model else ()
+
     with closing(get_db()) as conn:
-        total = conn.execute("SELECT COUNT(*) FROM exchange_records").fetchone()[0]
+        available_models = [
+            row[0]
+            for row in conn.execute("SELECT DISTINCT model FROM exchange_records ORDER BY model")
+        ]
+
+        total = conn.execute(
+            f"SELECT COUNT(*) FROM exchange_records {where_clause}", params
+        ).fetchone()[0]
 
         category_frequency = [
             {"category": row[0], "count": row[1]}
             for row in conn.execute(
-                "SELECT sycophancy_category, COUNT(*) FROM exchange_records "
-                "GROUP BY sycophancy_category ORDER BY COUNT(*) DESC"
+                f"SELECT sycophancy_category, COUNT(*) FROM exchange_records {where_clause} "
+                "GROUP BY sycophancy_category ORDER BY COUNT(*) DESC",
+                params,
             )
         ]
 
         theme_category_matrix = [
             {"theme": row[0], "category": row[1], "count": row[2]}
             for row in conn.execute(
-                "SELECT theme, sycophancy_category, COUNT(*) FROM exchange_records "
-                "GROUP BY theme, sycophancy_category"
+                f"SELECT theme, sycophancy_category, COUNT(*) FROM exchange_records {where_clause} "
+                "GROUP BY theme, sycophancy_category",
+                params,
             )
         ]
 
         timeline = [
             {"date": row[0], "count": row[1]}
             for row in conn.execute(
-                "SELECT date(created_at) AS d, COUNT(*) FROM exchange_records "
-                "GROUP BY d ORDER BY d ASC"
+                f"SELECT date(created_at) AS d, COUNT(*) FROM exchange_records {where_clause} "
+                "GROUP BY d ORDER BY d ASC",
+                params,
             )
         ]
 
     return {
+        "available_models": available_models,
+        "selected_model": model,
         "total_exchanges": total,
         "category_frequency": category_frequency,
         "theme_category_matrix": theme_category_matrix,
