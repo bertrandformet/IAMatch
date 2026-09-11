@@ -466,6 +466,14 @@ body {
   margin: 4px 0 0;
 }
 
+.radar-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.radar-compare .score-label { text-align: center; }
+
 .radar-svg { width: 100%; max-width: 340px; height: auto; display: block; margin: 0 auto; }
 .radar-grid { fill: none; stroke: var(--border); stroke-width: 1; }
 .radar-axis { stroke: var(--border); stroke-width: 1; }

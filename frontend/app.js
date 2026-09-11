@@ -65,6 +65,24 @@ const CATEGORY_LABELS = {
   contre_argument_ferme: "Contre-argument ferme",
 };
 
+// Ordre fixe des catégories pour l'axe du radar IA (doit rester synchronisé
+// avec SYCOPHANCY_CATEGORIES côté backend) + libellés courts pour tenir sur
+// un axe de radar (la version longue de CATEGORY_LABELS reste utilisée dans
+// le détail par tour, où il y a plus de place).
+const SYCOPHANCY_CATEGORIES = [
+  "feedback_sycophancy", "are_you_sure_sycophancy",
+  "answer_sycophancy", "mimicry_sycophancy",
+  "concession_legitime", "contre_argument_ferme",
+];
+const SHORT_CATEGORY_LABELS = {
+  feedback_sycophancy: "Feedback",
+  are_you_sure_sycophancy: "Doute",
+  answer_sycophancy: "Réponse",
+  mimicry_sycophancy: "Mimétisme",
+  concession_legitime: "Concession",
+  contre_argument_ferme: "Contre-arg.",
+};
+
 async function loadModels() {
   try {
     const res = await fetch("/api/models");
@@ -143,7 +161,11 @@ function beginGame() {
 }
 
 function updateRoundCounter() {
-  roundCounterEl.textContent = `Tour ${state.currentRound} / ${state.totalRounds}`;
+  // Une fois le dernier tour joué, state.currentRound dépasse totalRounds
+  // (incrémenté pour détecter la fin de partie) : on plafonne l'affichage
+  // plutôt que de montrer "Tour 3 / 2".
+  const displayedRound = Math.min(state.currentRound, state.totalRounds);
+  roundCounterEl.textContent = `Tour ${displayedRound} / ${state.totalRounds}`;
 }
 
 function startTimer() {
@@ -375,10 +397,37 @@ function renderSynthesis(data) {
   data.piques.forEach((p) => {
     themeCounts[p.theme] = (themeCounts[p.theme] || 0) + 1;
   });
+  const themeItems = THEMES.map((t) => ({ label: t, value: themeCounts[t] }));
+
+  const categoryCounts = {};
+  SYCOPHANCY_CATEGORIES.forEach((c) => (categoryCounts[c] = 0));
+  data.responses.forEach((r) => {
+    if (categoryCounts[r.category] === undefined) categoryCounts[r.category] = 0;
+    categoryCounts[r.category] += 1;
+  });
+  const categoryItems = SYCOPHANCY_CATEGORIES.map((c) => ({
+    label: SHORT_CATEGORY_LABELS[c] || c,
+    value: categoryCounts[c],
+  }));
+
   const radarBlock = document.createElement("div");
   radarBlock.className = "synthesis-block";
   radarBlock.innerHTML = "<h2>Catégories argumentatives explorées</h2>";
-  radarBlock.appendChild(buildRadarSvg(themeCounts));
+
+  const radarRow = document.createElement("div");
+  radarRow.className = "radar-compare";
+
+  const playerRadarCol = document.createElement("div");
+  playerRadarCol.innerHTML = '<p class="score-label">Joueur — thèmes des piques</p>';
+  playerRadarCol.appendChild(buildRadarSvg(themeItems));
+
+  const aiRadarCol = document.createElement("div");
+  aiRadarCol.innerHTML = '<p class="score-label">IA — catégories de réponse</p>';
+  aiRadarCol.appendChild(buildRadarSvg(categoryItems));
+
+  radarRow.appendChild(playerRadarCol);
+  radarRow.appendChild(aiRadarCol);
+  radarBlock.appendChild(radarRow);
   panel.appendChild(radarBlock);
 
   const detailBlock = document.createElement("div");
@@ -432,13 +481,15 @@ function renderSynthesis(data) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-function buildRadarSvg(counts) {
+// items : [{label: string, value: number}] — générique, utilisé pour le
+// radar des thèmes (joueur) et celui des catégories de réponse IA.
+function buildRadarSvg(items) {
   const size = 340;
   const center = size / 2;
   const radius = 95;
   const svgNS = "http://www.w3.org/2000/svg";
-  const angleStep = (2 * Math.PI) / THEMES.length;
-  const values = THEMES.map((t) => counts[t] || 0);
+  const angleStep = (2 * Math.PI) / items.length;
+  const values = items.map((it) => it.value);
   const maxValue = Math.max(1, ...values);
 
   const pointOn = (frac, i) => {
@@ -451,14 +502,14 @@ function buildRadarSvg(counts) {
   svg.setAttribute("class", "radar-svg");
 
   [0.25, 0.5, 0.75, 1].forEach((frac) => {
-    const points = THEMES.map((_, i) => pointOn(frac, i).join(",")).join(" ");
+    const points = items.map((_, i) => pointOn(frac, i).join(",")).join(" ");
     const ring = document.createElementNS(svgNS, "polygon");
     ring.setAttribute("points", points);
     ring.setAttribute("class", "radar-grid");
     svg.appendChild(ring);
   });
 
-  THEMES.forEach((theme, i) => {
+  items.forEach((item, i) => {
     const [x2, y2] = pointOn(1, i);
     const axis = document.createElementNS(svgNS, "line");
     axis.setAttribute("x1", center);
@@ -475,7 +526,7 @@ function buildRadarSvg(counts) {
     label.setAttribute("class", "radar-label");
     label.setAttribute("text-anchor", "middle");
     label.setAttribute("dominant-baseline", "middle");
-    label.textContent = theme;
+    label.textContent = item.label;
     svg.appendChild(label);
   });
 
