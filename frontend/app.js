@@ -40,7 +40,14 @@ let state = {
   timerInterval: null,
   timeLeft: 0,
   aiCaptionEls: [], // une entrée par réponse IA, dans l'ordre, pour l'annotation post-synthèse
+  piquePrefix: "Moi au moins ", // pré-rempli dans le champ ; "Nous au moins " en collectif
 };
+
+function resetPiqueInputToPrefix() {
+  piqueInput.value = state.piquePrefix;
+  // place le curseur juste après le préfixe plutôt qu'au début du champ
+  piqueInput.setSelectionRange(state.piquePrefix.length, state.piquePrefix.length);
+}
 
 // Doit rester synchronisé avec THEMES côté backend (backend/app/main.py).
 const THEMES = [
@@ -117,10 +124,11 @@ function beginGame() {
   state.currentRound = 1;
   state.history = [];
 
+  state.piquePrefix = state.mode === "collectif" ? "Nous au moins " : "Moi au moins ";
+
   modelNameLabel.textContent = state.model;
   updateRoundCounter();
   collectifBanner.style.display = state.mode === "collectif" ? "block" : "none";
-  piqueInput.placeholder = state.mode === "collectif" ? "Nous au moins…" : "Moi au moins…";
 
   setupScreen.classList.remove("active");
   gameScreen.classList.add("active");
@@ -130,6 +138,7 @@ function beginGame() {
     startTimer();
   }
 
+  resetPiqueInputToPrefix();
   piqueInput.focus();
 }
 
@@ -163,9 +172,12 @@ function renderTimer() {
 
 function onTimerExpired() {
   // V1 : le timer force l'envoi si une pique est déjà tapée (réponse spontanée,
-  // cf. Kahneman/Système 1 dans le brief). S'il n'y a rien à envoyer, on laisse
-  // simplement le badge signaler le dépassement plutôt que de bloquer le jeu.
-  if (piqueInput.value.trim() && !state.waitingForAi) {
+  // cf. Kahneman/Système 1 dans le brief). Le champ étant pré-rempli avec le
+  // préfixe « Moi au moins », on ne force l'envoi que si le joueur a ajouté
+  // du texte derrière — sinon on laisse simplement le badge signaler le
+  // dépassement plutôt que d'envoyer une pique vide de sens.
+  const typed = piqueInput.value.trim();
+  if (typed && typed !== state.piquePrefix.trim() && !state.waitingForAi) {
     sendPique();
   }
 }
@@ -267,6 +279,9 @@ async function sendPique() {
     neuralAvatar.classList.remove("thinking");
     state.waitingForAi = false;
     setComposerEnabled(true);
+    if (state.currentRound <= state.totalRounds) {
+      resetPiqueInputToPrefix();
+    }
     piqueInput.focus();
     if (state.timerEnabled && state.currentRound <= state.totalRounds) {
       timerBadge.style.display = "inline-block";
