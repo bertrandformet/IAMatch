@@ -4,6 +4,8 @@
 
 const setupScreen = document.getElementById("setup-screen");
 const gameScreen = document.getElementById("game-screen");
+const modeSelect = document.getElementById("mode-select");
+const modeHint = document.getElementById("mode-hint");
 const modelSelect = document.getElementById("model-select");
 const roundsSelect = document.getElementById("rounds-select");
 const timerToggle = document.getElementById("timer-toggle");
@@ -15,6 +17,7 @@ const setupError = document.getElementById("setup-error");
 const roundCounterEl = document.getElementById("round-counter");
 const modelNameLabel = document.getElementById("model-name-label");
 const timerBadge = document.getElementById("timer-badge");
+const collectifBanner = document.getElementById("collectif-banner");
 const neuralAvatar = document.getElementById("neural-avatar");
 const messagesEl = document.getElementById("messages");
 const piqueInput = document.getElementById("pique-input");
@@ -22,6 +25,7 @@ const sendBtn = document.getElementById("send-btn");
 const composer = document.getElementById("composer");
 
 let state = {
+  mode: "individuel",
   model: null,
   totalRounds: 4,
   timerEnabled: false,
@@ -68,7 +72,7 @@ async function loadModels() {
     startBtn.disabled = false;
   } catch (err) {
     setupError.textContent =
-      "Impossible de récupérer la liste des modèles Albert (" + err.message + "). " +
+      "Impossible de récupérer la liste des modèles de langage (" + err.message + "). " +
       "Vérifie que le backend tourne et que ALBERT_API_KEY est configurée dans .env.";
     setupError.style.display = "block";
     startBtn.disabled = true;
@@ -79,7 +83,12 @@ timerToggle.addEventListener("change", () => {
   timerDurationField.style.display = timerToggle.checked ? "block" : "none";
 });
 
+modeSelect.addEventListener("change", () => {
+  modeHint.style.display = modeSelect.value === "collectif" ? "block" : "none";
+});
+
 startBtn.addEventListener("click", () => {
+  state.mode = modeSelect.value;
   state.model = modelSelect.value;
   state.totalRounds = parseInt(roundsSelect.value, 10);
   state.timerEnabled = timerToggle.checked;
@@ -89,6 +98,7 @@ startBtn.addEventListener("click", () => {
 
   modelNameLabel.textContent = state.model;
   updateRoundCounter();
+  collectifBanner.style.display = state.mode === "collectif" ? "block" : "none";
 
   setupScreen.classList.remove("active");
   gameScreen.classList.add("active");
@@ -230,7 +240,7 @@ async function sendPique() {
     }
   } catch (err) {
     loadingRow.remove();
-    addBubble("assistant", `Erreur lors de l'appel à Albert : ${err.message}`);
+    addBubble("assistant", `Erreur lors de l'appel au modèle de langage : ${err.message}`);
   } finally {
     neuralAvatar.classList.remove("thinking");
     state.waitingForAi = false;

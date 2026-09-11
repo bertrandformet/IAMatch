@@ -12,10 +12,21 @@
 <section id="setup-screen" class="screen active">
   <div class="setup-card">
     <h1>IA Match</h1>
-    <p class="subtitle">Mode individuel — configure ta partie avant de lancer le clash.</p>
+    <p class="subtitle">Configure ta partie avant de lancer le clash.</p>
 
     <div class="field">
-      <label for="model-select">Modèle Albert</label>
+      <label for="mode-select">Mode de jeu</label>
+      <select id="mode-select">
+        <option value="individuel" selected>Individuel</option>
+        <option value="collectif">Collectif</option>
+      </select>
+      <p class="field-hint" id="mode-hint" style="display:none;">
+        Les participants se mettent d'accord à l'oral (ou sur un canal externe) sur une seule pique par tour, qu'une seule personne saisit ici.
+      </p>
+    </div>
+
+    <div class="field">
+      <label for="model-select">Modèle de langage</label>
       <select id="model-select"></select>
     </div>
 
@@ -33,9 +44,15 @@
         <input type="checkbox" id="timer-toggle" />
         <label for="timer-toggle">Activer un timer par pique</label>
       </div>
+      <p class="field-hint">
+        Un temps limité pousse à répondre par réflexe plutôt qu'en construisant son argument
+        (système 1 rapide/intuitif vs système 2 lent/réfléchi — Kahneman, 2011) : utile pour
+        observer des réactions spontanées plutôt que des piques travaillées.
+      </p>
       <div class="field" id="timer-duration-field" style="display:none;">
         <label for="timer-duration">Durée (secondes)</label>
         <input type="number" id="timer-duration" value="30" min="10" max="120" />
+        <p class="field-hint">Recommandé : 30 à 45 secondes pour forcer une réponse spontanée.</p>
       </div>
     </div>
 
@@ -64,6 +81,10 @@
     </div>
     <div class="timer-badge" id="timer-badge" style="display:none;"></div>
   </header>
+
+  <div class="collectif-banner" id="collectif-banner" style="display:none;">
+    Mode collectif — une seule pique validée par le groupe à chaque tour.
+  </div>
 
   <div id="messages"></div>
 
