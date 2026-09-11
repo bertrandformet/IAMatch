@@ -99,6 +99,7 @@ startBtn.addEventListener("click", () => {
   modelNameLabel.textContent = state.model;
   updateRoundCounter();
   collectifBanner.style.display = state.mode === "collectif" ? "block" : "none";
+  piqueInput.placeholder = state.mode === "collectif" ? "Nous au moins…" : "Moi au moins…";
 
   setupScreen.classList.remove("active");
   gameScreen.classList.add("active");
