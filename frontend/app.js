@@ -383,25 +383,18 @@ function renderSynthesis(data) {
   const panel = document.createElement("div");
   panel.className = "synthesis-panel";
 
-  const totalScore = data.piques.reduce((sum, p) => sum + p.warrant_score, 0);
-  const maxScore = data.piques.length * 2;
+  // Pas de score chiffré affiché côté joueur (on ne le note pas) : seul le
+  // détail qualitatif par pique (thème + commentaire) reste plus bas. Le
+  // score de l'IA, lui, reste affiché — l'objectif du jeu est d'observer sa
+  // qualité argumentative, pas celle du joueur.
   const totalAiScore = data.responses.reduce((sum, r) => sum + r.ai_warrant_score, 0);
   const maxAiScore = data.responses.length * 2;
   const scoreBlock = document.createElement("div");
   scoreBlock.className = "synthesis-block";
   scoreBlock.innerHTML = `
-    <h2>Score argumentatif</h2>
-    <div class="score-compare">
-      <div>
-        <p class="score-label">Joueur</p>
-        <p class="score-value">${totalScore} / ${maxScore}</p>
-      </div>
-      <div>
-        <p class="score-label">IA</p>
-        <p class="score-value">${totalAiScore} / ${maxAiScore}</p>
-      </div>
-    </div>
-    <p class="score-hint">Explicitation du lien logique (warrant) de chaque pique, des deux côtés — Toulmin, 1958. Le but reste d'observer la qualité de l'argumentation de l'IA, pas seulement de noter le joueur.</p>
+    <h2>Score argumentatif de l'IA</h2>
+    <p class="score-value">${totalAiScore} / ${maxAiScore}</p>
+    <p class="score-hint">Explicitation du lien logique (warrant) de chaque pique de relance de l'IA — Toulmin, 1958.</p>
   `;
   panel.appendChild(scoreBlock);
 
@@ -465,7 +458,6 @@ function renderSynthesis(data) {
       <div class="pique-detail-head">
         <strong>Pique ${p.index + 1}</strong>
         <span class="pique-theme">${p.theme}</span>
-        <span class="pique-score">${p.warrant_score}/2</span>
       </div>
       <p class="pique-comment">${p.warrant_comment}</p>
     `;
