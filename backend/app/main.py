@@ -214,6 +214,19 @@ def _extract_json(text: str) -> dict:
     return json.loads(cleaned)
 
 
+# Schéma confirmé par appel réel à /v1/models (deux versions précédentes de
+# ce filtre devinaient à tort) : les modèles de chat utilisables pour le jeu
+# sont tagués "text-generation" (LLM texte pur) ou "image-text-to-text" (LLM
+# multimodal, ex. Mistral/Ministral, aussi utilisable en chat texte seul).
+# Exclus : "text-embeddings-inference" (bge-m3...), "text-classification"
+# (reranking), et "automatic-speech-recognition" (whisper) — non pertinents.
+CHAT_MODEL_TYPES = ("text-generation", "image-text-to-text")
+
+
+def _filter_chat_models(data: list[dict]) -> list[dict]:
+    return [{"id": m["id"]} for m in data if "id" in m and m.get("type") in CHAT_MODEL_TYPES]
+
+
 @app.get("/api/models")
 async def list_models(raw: bool = False):
     """Liste les modèles Albert disponibles pour la clé configurée, pour peupler
@@ -236,13 +249,7 @@ async def list_models(raw: bool = False):
     data = resp.json().get("data", [])
     if raw:
         return {"data": data}
-
-    # Un premier filtre par "type" excluait à tort des modèles de chat
-    # valides (le schéma exact de /v1/models varie selon le déploiement
-    # Albert) : on liste maintenant tous les modèles renvoyés par l'API,
-    # sans filtrage deviné.
-    models = [{"id": m["id"]} for m in data if "id" in m]
-    return {"models": models}
+    return {"models": _filter_chat_models(data)}
 
 
 # Round de jeu — system prompt de FORMAT uniquement (brièveté + relance en
