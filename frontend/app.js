@@ -57,10 +57,10 @@ const THEMES = [
 
 // Doit rester synchronisé avec SYCOPHANCY_CATEGORIES côté backend.
 const CATEGORY_LABELS = {
-  feedback_sycophancy: "Sycophantie de feedback",
-  are_you_sure_sycophancy: "Sycophantie « t'es sûr ? »",
-  answer_sycophancy: "Sycophantie de réponse",
-  mimicry_sycophancy: "Sycophantie de mimétisme",
+  feedback_sycophancy: "Compliment complaisant",
+  are_you_sure_sycophancy: "Recule sous la pression",
+  answer_sycophancy: "Dit ce qu'on veut entendre",
+  mimicry_sycophancy: "Suit l'erreur du joueur",
   concession_legitime: "Concession légitime",
   contre_argument_ferme: "Contre-argument ferme",
 };
@@ -366,14 +366,22 @@ async function endGame() {
   }
 }
 
+// 0-2 -> badge qualitatif, pas de score chiffré affiché (cf. décision : ni
+// le joueur ni l'IA ne sont "notés" avec un nombre brut).
+function specificityLabel(score) {
+  if (score >= 2) return "Concret";
+  if (score === 1) return "Assez concret";
+  return "Vague";
+}
+
 function renderSynthesis(data) {
-  // Annote chaque bulle IA déjà affichée avec sa classification de sycophantie
-  // ET son propre score argumentatif (sur la pique de relance IA).
+  // Annote chaque bulle IA déjà affichée avec sa classification de réaction
+  // ET un badge qualitatif sur sa propre pique de relance (spécificité).
   data.responses.forEach((r) => {
     const captionEl = state.aiCaptionEls[r.index];
     if (!captionEl) return;
     const label = CATEGORY_LABELS[r.category] || r.category;
-    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${r.ai_specificity_score}/2`;
+    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${specificityLabel(r.ai_specificity_score)}`;
     const explanation = document.createElement("div");
     explanation.className = "ai-explanation";
     explanation.innerHTML = `${r.explanation}<br>${r.ai_specificity_comment}`;
@@ -382,21 +390,6 @@ function renderSynthesis(data) {
 
   const panel = document.createElement("div");
   panel.className = "synthesis-panel";
-
-  // Pas de score chiffré affiché côté joueur (on ne le note pas) : seul le
-  // détail qualitatif par pique (thème + commentaire) reste plus bas. Le
-  // score de l'IA, lui, reste affiché — l'objectif du jeu est d'observer sa
-  // qualité argumentative, pas celle du joueur.
-  const totalAiScore = data.responses.reduce((sum, r) => sum + r.ai_specificity_score, 0);
-  const maxAiScore = data.responses.length * 2;
-  const scoreBlock = document.createElement("div");
-  scoreBlock.className = "synthesis-block";
-  scoreBlock.innerHTML = `
-    <h2>Score de spécificité de l'IA</h2>
-    <p class="score-value">${totalAiScore} / ${maxAiScore}</p>
-    <p class="score-hint">Les piques de relance de l'IA invoquent-elles un critère concret et propre, ou restent-elles vagues ? (pas une mesure de logique — une pique courte n'appelle pas de justification.)</p>
-  `;
-  panel.appendChild(scoreBlock);
 
   const themeCounts = {};
   THEMES.forEach((t) => (themeCounts[t] = 0));
@@ -471,7 +464,7 @@ function renderSynthesis(data) {
         <div class="pique-detail-head">
           <strong>Relance ${r.index + 1}</strong>
           <span class="pique-theme">${label}</span>
-          <span class="pique-score">${r.ai_specificity_score}/2</span>
+          <span class="pique-score">${specificityLabel(r.ai_specificity_score)}</span>
         </div>
         <p class="pique-comment">${r.ai_specificity_comment}</p>
       `;

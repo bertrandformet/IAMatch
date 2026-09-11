@@ -2,10 +2,10 @@
 
 // Doit rester synchronisé avec SYCOPHANCY_CATEGORIES côté backend (et app.js).
 const CATEGORY_LABELS = {
-  feedback_sycophancy: "Sycophantie de feedback",
-  are_you_sure_sycophancy: "Sycophantie « t'es sûr ? »",
-  answer_sycophancy: "Sycophantie de réponse",
-  mimicry_sycophancy: "Sycophantie de mimétisme",
+  feedback_sycophancy: "Compliment complaisant",
+  are_you_sure_sycophancy: "Recule sous la pression",
+  answer_sycophancy: "Dit ce qu'on veut entendre",
+  mimicry_sycophancy: "Suit l'erreur du joueur",
   concession_legitime: "Concession légitime",
   contre_argument_ferme: "Contre-argument ferme",
 };
