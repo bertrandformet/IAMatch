@@ -383,11 +383,21 @@ function renderSynthesis(data) {
 
   const detailBlock = document.createElement("div");
   detailBlock.className = "synthesis-block";
-  detailBlock.innerHTML = "<h2>Détail par pique</h2>";
+  detailBlock.innerHTML = `
+    <h2>Détail par tour</h2>
+    <div class="detail-columns-head">
+      <span>Joueur</span><span>IA</span>
+    </div>
+  `;
+  const responsesByIndex = new Map(data.responses.map((r) => [r.index, r]));
   data.piques.forEach((p) => {
-    const row = document.createElement("div");
-    row.className = "pique-detail-row";
-    row.innerHTML = `
+    const r = responsesByIndex.get(p.index);
+    const pair = document.createElement("div");
+    pair.className = "detail-pair";
+
+    const piqueCol = document.createElement("div");
+    piqueCol.className = "detail-col";
+    piqueCol.innerHTML = `
       <div class="pique-detail-head">
         <strong>Pique ${p.index + 1}</strong>
         <span class="pique-theme">${p.theme}</span>
@@ -395,28 +405,26 @@ function renderSynthesis(data) {
       </div>
       <p class="pique-comment">${p.warrant_comment}</p>
     `;
-    detailBlock.appendChild(row);
+    pair.appendChild(piqueCol);
+
+    const aiCol = document.createElement("div");
+    aiCol.className = "detail-col";
+    if (r) {
+      const label = CATEGORY_LABELS[r.category] || r.category;
+      aiCol.innerHTML = `
+        <div class="pique-detail-head">
+          <strong>Relance ${r.index + 1}</strong>
+          <span class="pique-theme">${label}</span>
+          <span class="pique-score">${r.ai_warrant_score}/2</span>
+        </div>
+        <p class="pique-comment">${r.ai_warrant_comment}</p>
+      `;
+    }
+    pair.appendChild(aiCol);
+
+    detailBlock.appendChild(pair);
   });
   panel.appendChild(detailBlock);
-
-  const aiDetailBlock = document.createElement("div");
-  aiDetailBlock.className = "synthesis-block";
-  aiDetailBlock.innerHTML = "<h2>Détail par relance IA</h2>";
-  data.responses.forEach((r) => {
-    const row = document.createElement("div");
-    row.className = "pique-detail-row";
-    const label = CATEGORY_LABELS[r.category] || r.category;
-    row.innerHTML = `
-      <div class="pique-detail-head">
-        <strong>Relance ${r.index + 1}</strong>
-        <span class="pique-theme">${label}</span>
-        <span class="pique-score">${r.ai_warrant_score}/2</span>
-      </div>
-      <p class="pique-comment">${r.ai_warrant_comment}</p>
-    `;
-    aiDetailBlock.appendChild(row);
-  });
-  panel.appendChild(aiDetailBlock);
 
   addReplayButton(panel);
 

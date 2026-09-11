@@ -416,11 +416,32 @@ body {
   margin: 4px 0 0;
 }
 
-.pique-detail-row {
+.detail-columns-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.detail-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
   padding: 10px 0;
   border-top: 1px solid var(--border);
 }
-.pique-detail-row:first-of-type { border-top: none; }
+.detail-pair:first-of-type { border-top: none; }
+
+.detail-col:empty::before {
+  content: "—";
+  color: var(--muted);
+  font-size: 13px;
+}
 
 .pique-detail-head {
   display: flex;

@@ -228,9 +228,32 @@ def _extract_json(text: str) -> dict:
 # (reranking), et "automatic-speech-recognition" (whisper) — non pertinents.
 CHAT_MODEL_TYPES = ("text-generation", "image-text-to-text")
 
+# Exclusion supplémentaire des modèles spécialisés code/OCR (trop nombreux
+# modèles proposés sinon, alors que seuls les modèles généralistes texte ont
+# un sens pour ce jeu). On compare des TOKENS entiers (id + alias découpés
+# sur la ponctuation), pas une sous-chaîne brute, pour ne pas exclure par
+# erreur un futur modèle dont le nom contiendrait ces lettres par coïncidence
+# (ex. "encoder" ne doit pas matcher "code").
+EXCLUDED_CHAT_MODEL_TOKENS = {"code", "coder", "ocr"}
+
+
+def _model_tokens(model: dict) -> set[str]:
+    names = [model.get("id", "")] + list(model.get("aliases") or [])
+    tokens: set[str] = set()
+    for name in names:
+        tokens.update(t.lower() for t in re.split(r"[^a-zA-Z0-9]+", name) if t)
+    return tokens
+
 
 def _filter_chat_models(data: list[dict]) -> list[dict]:
-    return [{"id": m["id"]} for m in data if "id" in m and m.get("type") in CHAT_MODEL_TYPES]
+    models = []
+    for m in data:
+        if "id" not in m or m.get("type") not in CHAT_MODEL_TYPES:
+            continue
+        if _model_tokens(m) & EXCLUDED_CHAT_MODEL_TOKENS:
+            continue
+        models.append({"id": m["id"]})
+    return models
 
 
 @app.get("/api/models")
