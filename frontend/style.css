@@ -50,6 +50,27 @@ body {
   font-size: 14px;
 }
 
+.game-intro {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.game-intro p {
+  font-size: 13px;
+  color: var(--ink);
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+.game-intro p:last-child { margin-bottom: 0; }
+
+.game-intro-duration {
+  color: var(--muted) !important;
+  font-size: 12px !important;
+}
+
 .field { margin-bottom: 18px; }
 
 .field-hint {
