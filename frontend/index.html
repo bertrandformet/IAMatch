@@ -74,6 +74,29 @@
   </div>
 </section>
 
+<!-- Pop-up d'information/consentement, obligatoire avant toute partie -->
+<div id="consent-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-card">
+    <h2>Avant de commencer</h2>
+    <p>
+      Tu vas interagir avec un système d'intelligence artificielle (un modèle de langage) —
+      pas avec une personne.
+    </p>
+    <p class="modal-warning">
+      Aucune donnée personnelle ne doit être transmise : n'écris rien de sensible ou
+      identifiant dans tes piques (santé, origine, opinions, vie privée…).
+    </p>
+    <p>
+      Les échanges sont enregistrés de façon anonymisée pour alimenter un tableau de bord
+      public sur les tendances du modèle — aucune donnée ne permet de t'identifier.
+    </p>
+    <div class="modal-actions">
+      <button id="consent-cancel-btn" class="btn-secondary">Annuler</button>
+      <button id="consent-accept-btn" class="btn-primary">J'ai compris, je lance la partie</button>
+    </div>
+  </div>
+</div>
+
 <!-- Écran de jeu -->
 <section id="game-screen" class="screen">
   <header class="game-header">

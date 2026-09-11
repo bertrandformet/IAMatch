@@ -14,6 +14,10 @@ const timerDurationInput = document.getElementById("timer-duration");
 const startBtn = document.getElementById("start-btn");
 const setupError = document.getElementById("setup-error");
 
+const consentModal = document.getElementById("consent-modal");
+const consentCancelBtn = document.getElementById("consent-cancel-btn");
+const consentAcceptBtn = document.getElementById("consent-accept-btn");
+
 const roundCounterEl = document.getElementById("round-counter");
 const modelNameLabel = document.getElementById("model-name-label");
 const timerBadge = document.getElementById("timer-badge");
@@ -87,7 +91,24 @@ modeSelect.addEventListener("change", () => {
   modeHint.style.display = modeSelect.value === "collectif" ? "block" : "none";
 });
 
+// Le clic sur « Lancer la partie » ouvre systématiquement la pop-up
+// d'information/consentement (interaction avec une IA, rappel anti-données
+// sensibles, anonymisation) : la partie ne démarre réellement qu'à
+// l'acceptation explicite. Sans accord, pas de jeu.
 startBtn.addEventListener("click", () => {
+  consentModal.style.display = "flex";
+});
+
+consentCancelBtn.addEventListener("click", () => {
+  consentModal.style.display = "none";
+});
+
+consentAcceptBtn.addEventListener("click", () => {
+  consentModal.style.display = "none";
+  beginGame();
+});
+
+function beginGame() {
   state.mode = modeSelect.value;
   state.model = modelSelect.value;
   state.totalRounds = parseInt(roundsSelect.value, 10);
@@ -110,7 +131,7 @@ startBtn.addEventListener("click", () => {
   }
 
   piqueInput.focus();
-});
+}
 
 function updateRoundCounter() {
   roundCounterEl.textContent = `Tour ${state.currentRound} / ${state.totalRounds}`;
