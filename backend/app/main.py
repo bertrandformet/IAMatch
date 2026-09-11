@@ -215,9 +215,15 @@ def _extract_json(text: str) -> dict:
 
 
 @app.get("/api/models")
-async def list_models():
+async def list_models(raw: bool = False):
     """Liste les modèles Albert disponibles pour la clé configurée, pour peupler
-    le sélecteur de l'écran de configuration avant partie."""
+    le sélecteur de l'écran de configuration avant partie.
+
+    `?raw=true` renvoie la réponse Albert telle quelle (aucune donnée
+    secrète dedans) — utile pour diagnostiquer le schéma réel de /v1/models,
+    qui varie selon le déploiement Albert et n'est pas garanti par une doc
+    stable à ce jour.
+    """
     async with httpx.AsyncClient(headers=albert_headers(), timeout=15) as client:
         try:
             resp = await client.get(f"{ALBERT_BASE_URL}/models")
@@ -228,14 +234,14 @@ async def list_models():
             raise HTTPException(status_code=502, detail=f"API Albert injoignable : {exc}") from exc
 
     data = resp.json().get("data", [])
-    # Filtrage défensif : on ne garde que les modèles de type génération de texte
-    # quand l'information est présente (le schéma exact de /v1/models n'a pas
-    # encore été vérifié avec une vraie clé — à ajuster si besoin une fois testé).
-    models = [
-        {"id": m["id"]}
-        for m in data
-        if "id" in m and m.get("type", "text-generation") in ("text-generation", "chat")
-    ]
+    if raw:
+        return {"data": data}
+
+    # Un premier filtre par "type" excluait à tort des modèles de chat
+    # valides (le schéma exact de /v1/models varie selon le déploiement
+    # Albert) : on liste maintenant tous les modèles renvoyés par l'API,
+    # sans filtrage deviné.
+    models = [{"id": m["id"]} for m in data if "id" in m]
     return {"models": models}
 
 
