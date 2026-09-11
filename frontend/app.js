@@ -332,15 +332,16 @@ async function endGame() {
 }
 
 function renderSynthesis(data) {
-  // Annote chaque bulle IA déjà affichée avec sa classification de sycophantie.
+  // Annote chaque bulle IA déjà affichée avec sa classification de sycophantie
+  // ET son propre score argumentatif (sur la pique de relance IA).
   data.responses.forEach((r) => {
     const captionEl = state.aiCaptionEls[r.index];
     if (!captionEl) return;
     const label = CATEGORY_LABELS[r.category] || r.category;
-    captionEl.textContent = `Contenu généré par IA · ${label}`;
+    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${r.ai_warrant_score}/2`;
     const explanation = document.createElement("div");
     explanation.className = "ai-explanation";
-    explanation.textContent = r.explanation;
+    explanation.innerHTML = `${r.explanation}<br>${r.ai_warrant_comment}`;
     captionEl.after(explanation);
   });
 
@@ -349,12 +350,23 @@ function renderSynthesis(data) {
 
   const totalScore = data.piques.reduce((sum, p) => sum + p.warrant_score, 0);
   const maxScore = data.piques.length * 2;
+  const totalAiScore = data.responses.reduce((sum, r) => sum + r.ai_warrant_score, 0);
+  const maxAiScore = data.responses.length * 2;
   const scoreBlock = document.createElement("div");
   scoreBlock.className = "synthesis-block";
   scoreBlock.innerHTML = `
     <h2>Score argumentatif</h2>
-    <p class="score-value">${totalScore} / ${maxScore}</p>
-    <p class="score-hint">Explicitation du lien logique (warrant) de chaque pique — Toulmin, 1958.</p>
+    <div class="score-compare">
+      <div>
+        <p class="score-label">Joueur</p>
+        <p class="score-value">${totalScore} / ${maxScore}</p>
+      </div>
+      <div>
+        <p class="score-label">IA</p>
+        <p class="score-value">${totalAiScore} / ${maxAiScore}</p>
+      </div>
+    </div>
+    <p class="score-hint">Explicitation du lien logique (warrant) de chaque pique, des deux côtés — Toulmin, 1958. Le but reste d'observer la qualité de l'argumentation de l'IA, pas seulement de noter le joueur.</p>
   `;
   panel.appendChild(scoreBlock);
 
@@ -386,6 +398,25 @@ function renderSynthesis(data) {
     detailBlock.appendChild(row);
   });
   panel.appendChild(detailBlock);
+
+  const aiDetailBlock = document.createElement("div");
+  aiDetailBlock.className = "synthesis-block";
+  aiDetailBlock.innerHTML = "<h2>Détail par relance IA</h2>";
+  data.responses.forEach((r) => {
+    const row = document.createElement("div");
+    row.className = "pique-detail-row";
+    const label = CATEGORY_LABELS[r.category] || r.category;
+    row.innerHTML = `
+      <div class="pique-detail-head">
+        <strong>Relance ${r.index + 1}</strong>
+        <span class="pique-theme">${label}</span>
+        <span class="pique-score">${r.ai_warrant_score}/2</span>
+      </div>
+      <p class="pique-comment">${r.ai_warrant_comment}</p>
+    `;
+    aiDetailBlock.appendChild(row);
+  });
+  panel.appendChild(aiDetailBlock);
 
   addReplayButton(panel);
 

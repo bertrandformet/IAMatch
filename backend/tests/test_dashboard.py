@@ -13,8 +13,8 @@ def test_record_exchanges_persists_theme_score_category_only(tmp_path, monkeypat
         PiqueAnalysis(index=1, theme="émotions", warrant_score=0, warrant_comment="peu importe"),
     ]
     responses = [
-        ResponseAnalysis(index=0, category="contre_argument_ferme", explanation="peu importe"),
-        ResponseAnalysis(index=1, category="concession_legitime", explanation="peu importe"),
+        ResponseAnalysis(index=0, category="contre_argument_ferme", explanation="peu importe", ai_warrant_score=1, ai_warrant_comment="peu importe"),
+        ResponseAnalysis(index=1, category="concession_legitime", explanation="peu importe", ai_warrant_score=2, ai_warrant_comment="peu importe"),
     ]
 
     record_exchanges("mistral-test", piques, responses)
@@ -41,12 +41,12 @@ def test_dashboard_endpoint_aggregates_recorded_exchanges(tmp_path, monkeypatch)
     record_exchanges(
         "mistral-test",
         [PiqueAnalysis(index=0, theme="corps", warrant_score=2, warrant_comment="x")],
-        [ResponseAnalysis(index=0, category="contre_argument_ferme", explanation="x")],
+        [ResponseAnalysis(index=0, category="contre_argument_ferme", explanation="x", ai_warrant_score=1, ai_warrant_comment="x")],
     )
     record_exchanges(
         "mistral-test",
         [PiqueAnalysis(index=0, theme="corps", warrant_score=1, warrant_comment="x")],
-        [ResponseAnalysis(index=0, category="concession_legitime", explanation="x")],
+        [ResponseAnalysis(index=0, category="concession_legitime", explanation="x", ai_warrant_score=2, ai_warrant_comment="x")],
     )
 
     client = TestClient(main.app)
