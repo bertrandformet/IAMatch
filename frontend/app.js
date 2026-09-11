@@ -373,10 +373,10 @@ function renderSynthesis(data) {
     const captionEl = state.aiCaptionEls[r.index];
     if (!captionEl) return;
     const label = CATEGORY_LABELS[r.category] || r.category;
-    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${r.ai_warrant_score}/2`;
+    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${r.ai_specificity_score}/2`;
     const explanation = document.createElement("div");
     explanation.className = "ai-explanation";
-    explanation.innerHTML = `${r.explanation}<br>${r.ai_warrant_comment}`;
+    explanation.innerHTML = `${r.explanation}<br>${r.ai_specificity_comment}`;
     captionEl.after(explanation);
   });
 
@@ -387,14 +387,14 @@ function renderSynthesis(data) {
   // détail qualitatif par pique (thème + commentaire) reste plus bas. Le
   // score de l'IA, lui, reste affiché — l'objectif du jeu est d'observer sa
   // qualité argumentative, pas celle du joueur.
-  const totalAiScore = data.responses.reduce((sum, r) => sum + r.ai_warrant_score, 0);
+  const totalAiScore = data.responses.reduce((sum, r) => sum + r.ai_specificity_score, 0);
   const maxAiScore = data.responses.length * 2;
   const scoreBlock = document.createElement("div");
   scoreBlock.className = "synthesis-block";
   scoreBlock.innerHTML = `
-    <h2>Score argumentatif de l'IA</h2>
+    <h2>Score de spécificité de l'IA</h2>
     <p class="score-value">${totalAiScore} / ${maxAiScore}</p>
-    <p class="score-hint">Explicitation du lien logique (warrant) de chaque pique de relance de l'IA — Toulmin, 1958.</p>
+    <p class="score-hint">Les piques de relance de l'IA invoquent-elles un critère concret et propre, ou restent-elles vagues ? (pas une mesure de logique — une pique courte n'appelle pas de justification.)</p>
   `;
   panel.appendChild(scoreBlock);
 
@@ -459,7 +459,7 @@ function renderSynthesis(data) {
         <strong>Pique ${p.index + 1}</strong>
         <span class="pique-theme">${p.theme}</span>
       </div>
-      <p class="pique-comment">${p.warrant_comment}</p>
+      <p class="pique-comment">${p.specificity_comment}</p>
     `;
     pair.appendChild(piqueCol);
 
@@ -471,9 +471,9 @@ function renderSynthesis(data) {
         <div class="pique-detail-head">
           <strong>Relance ${r.index + 1}</strong>
           <span class="pique-theme">${label}</span>
-          <span class="pique-score">${r.ai_warrant_score}/2</span>
+          <span class="pique-score">${r.ai_specificity_score}/2</span>
         </div>
-        <p class="pique-comment">${r.ai_warrant_comment}</p>
+        <p class="pique-comment">${r.ai_specificity_comment}</p>
       `;
     }
     pair.appendChild(aiCol);
