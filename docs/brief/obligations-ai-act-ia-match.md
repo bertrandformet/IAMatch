@@ -60,4 +60,4 @@ C'est la section la plus concrète pour IA Match : le système **interagit direc
 3. **Support minimal pour les animateurs** de sessions collectives (Art. 4) — une notice courte sur le fonctionnement du système.
 4. **Point de vigilance à surveiller dans le temps**, pas à traiter maintenant : si IA Match était un jour intégré à une évaluation scolaire formelle, requalifier le niveau de risque (Annexe III, domaine éducation).
 
-*Rappel : ces résultats proviennent d'un outil officiel mais explicitement qualifié de non-juridiquement engageant par la Commission européenne elle-même. Pour un usage institutionnel (Réseau Canopé), une vérification par un service juridique reste recommandée avant mise en production, notamment sur le point 3 (Annexe III éducation).*
+*Rappel : ces résultats proviennent d'un outil officiel mais explicitement qualifié de non-juridiquement engageant par la Commission européenne elle-même. Pour un usage institutionnel, une vérification par un service juridique reste recommandée avant mise en production, notamment sur le point 3 (Annexe III éducation).*
