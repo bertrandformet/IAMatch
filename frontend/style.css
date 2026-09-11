@@ -127,6 +127,14 @@ body {
   display: none;
 }
 
+.dashboard-link {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.dashboard-link a { color: var(--accent); text-decoration: none; }
+
 /* --- Pop-up de consentement --- */
 .modal-overlay {
   position: fixed;

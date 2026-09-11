@@ -9,6 +9,9 @@ distinct, avec system prompt, qui n'existe pas encore à ce stade du projet.
 import json
 import os
 import re
+import sqlite3
+from contextlib import closing
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -20,6 +23,58 @@ from pydantic import BaseModel
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(ROOT_DIR / ".env")
+
+# Stockage du dashboard méta — SQLite local pour ce stade du projet (aucune
+# dépendance ajoutée). Ne contient JAMAIS le texte des piques/réponses, values
+# uniquement la classification déjà anonyme (thème, score, catégorie) : les
+# données sont anonymisées dès la capture, pas seulement à l'affichage
+# (brief, conformité RGPD). À migrer vers un Postgres managé hébergé en UE
+# (ex. Supabase, région Francfort) une fois l'hébergement de production
+# choisi — le schéma ci-dessous est conçu pour transposer facilement.
+DB_PATH = ROOT_DIR / "data" / "dashboard.db"
+
+
+def get_db() -> sqlite3.Connection:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS exchange_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_at TEXT NOT NULL,
+            model TEXT NOT NULL,
+            theme TEXT NOT NULL,
+            warrant_score INTEGER NOT NULL,
+            sycophancy_category TEXT NOT NULL
+        )
+        """
+    )
+    return conn
+
+
+def record_exchanges(model: str, piques: list, responses: list) -> None:
+    """Persiste, de façon anonyme, un échange (thème + score + catégorie) par
+    pique/réponse. Ne doit jamais faire échouer la synthèse déjà renvoyée au
+    joueur : une erreur d'écriture est journalisée, pas remontée."""
+    responses_by_index = {r.index: r for r in responses}
+    now = datetime.now(timezone.utc).isoformat()
+    rows = [
+        (now, model, p.theme, p.warrant_score, responses_by_index[p.index].category)
+        for p in piques
+        if p.index in responses_by_index
+    ]
+    if not rows:
+        return
+    try:
+        with closing(get_db()) as conn:
+            conn.executemany(
+                "INSERT INTO exchange_records (created_at, model, theme, warrant_score, sycophancy_category) "
+                "VALUES (?, ?, ?, ?, ?)",
+                rows,
+            )
+            conn.commit()
+    except sqlite3.Error as exc:
+        print(f"[dashboard] échec d'écriture (ignoré, ne bloque pas la partie) : {exc}")
 
 ALBERT_API_KEY = os.getenv("ALBERT_API_KEY", "")
 ALBERT_BASE_URL = os.getenv("ALBERT_BASE_URL", "https://albert.api.etalab.gouv.fr/v1")
@@ -252,12 +307,54 @@ async def game_synthesis(req: SynthesisRequest):
     raw_content = resp.json()["choices"][0]["message"]["content"]
     try:
         parsed = _extract_json(raw_content)
-        return SynthesisResponse(**parsed)
+        synthesis = SynthesisResponse(**parsed)
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=502,
             detail=f"Réponse de synthèse non interprétable (JSON invalide) : {exc}",
         ) from exc
+
+    record_exchanges(req.model, synthesis.piques, synthesis.responses)
+    return synthesis
+
+
+@app.get("/api/dashboard")
+async def dashboard():
+    """Dashboard méta — agrégats publics et anonymes, tous modèles/parties
+    confondus. Aucune donnée individuelle : uniquement des comptages."""
+    with closing(get_db()) as conn:
+        total = conn.execute("SELECT COUNT(*) FROM exchange_records").fetchone()[0]
+
+        category_frequency = [
+            {"category": row[0], "count": row[1]}
+            for row in conn.execute(
+                "SELECT sycophancy_category, COUNT(*) FROM exchange_records "
+                "GROUP BY sycophancy_category ORDER BY COUNT(*) DESC"
+            )
+        ]
+
+        theme_category_matrix = [
+            {"theme": row[0], "category": row[1], "count": row[2]}
+            for row in conn.execute(
+                "SELECT theme, sycophancy_category, COUNT(*) FROM exchange_records "
+                "GROUP BY theme, sycophancy_category"
+            )
+        ]
+
+        timeline = [
+            {"date": row[0], "count": row[1]}
+            for row in conn.execute(
+                "SELECT date(created_at) AS d, COUNT(*) FROM exchange_records "
+                "GROUP BY d ORDER BY d ASC"
+            )
+        ]
+
+    return {
+        "total_exchanges": total,
+        "category_frequency": category_frequency,
+        "theme_category_matrix": theme_category_matrix,
+        "timeline": timeline,
+    }
 
 
 FRONTEND_DIR = ROOT_DIR / "frontend"
