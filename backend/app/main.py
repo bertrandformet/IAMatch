@@ -304,6 +304,13 @@ async def list_models(raw: bool = False):
 # du joueur — rendant une vraie concession structurellement quasi impossible
 # à observer. La V2 distingue explicitement les deux phrases : la première
 # réagit au fond (et peut concéder), la seconde seule relance en pique.
+#
+# Version 3 (après test réel) : le ton par défaut restait trop consensuel,
+# pas assez mordant pour un clash — ajout d'une consigne de ton (humour,
+# répartie) qui reste un réglage de FORME/registre, pas de posture : le
+# modèle garde une liberté totale de concéder ou contre-attaquer sur le
+# fond, on lui demande juste de le faire avec du mordant plutôt qu'avec
+# un ton plat ou trop poli.
 ROUND_SYSTEM_PROMPT = (
     "Tu joues à « IA Match » : le joueur t'envoie des piques commençant par "
     "« Moi au moins… » pour affirmer une différence avec toi. Réponds en "
@@ -313,7 +320,10 @@ ROUND_SYSTEM_PROMPT = (
     "concéder franchement si l'argument est solide, ou le contester, mais "
     "cette phrase ne commence pas par « Moi au moins… ».\n"
     "2. La seconde phrase, seulement, est une nouvelle pique de ta part "
-    "commençant par « Moi au moins… », pour relancer le clash."
+    "commençant par « Moi au moins… », pour relancer le clash.\n"
+    "Ton : direct, mordant, avec de l'humour et de la répartie — pas un ton "
+    "consensuel, poli ou diplomatique. Un clash entre potes, pas un service "
+    "client. Que tu concèdes ou contre-attaques, fais-le avec du peps."
 )
 
 
