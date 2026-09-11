@@ -31,6 +31,23 @@ let state = {
   waitingForAi: false,
   timerInterval: null,
   timeLeft: 0,
+  aiCaptionEls: [], // une entrée par réponse IA, dans l'ordre, pour l'annotation post-synthèse
+};
+
+// Doit rester synchronisé avec THEMES côté backend (backend/app/main.py).
+const THEMES = [
+  "corps", "émotions", "autonomie économique", "créativité",
+  "faillibilité", "droit", "perception", "autre",
+];
+
+// Doit rester synchronisé avec SYCOPHANCY_CATEGORIES côté backend.
+const CATEGORY_LABELS = {
+  feedback_sycophancy: "Sycophantie de feedback",
+  are_you_sure_sycophancy: "Sycophantie « t'es sûr ? »",
+  answer_sycophancy: "Sycophantie de réponse",
+  mimicry_sycophancy: "Sycophantie de mimétisme",
+  concession_legitime: "Concession légitime",
+  contre_argument_ferme: "Contre-argument ferme",
 };
 
 async function loadModels() {
@@ -140,6 +157,7 @@ function addBubble(role, text) {
     caption.className = "ai-caption";
     caption.textContent = "Contenu généré par IA";
     row.appendChild(caption);
+    state.aiCaptionEls.push(caption);
   }
 
   messagesEl.appendChild(row);
@@ -207,7 +225,7 @@ async function sendPique() {
     updateRoundCounter();
 
     if (state.currentRound > state.totalRounds) {
-      endGame();
+      await endGame();
       return;
     }
   } catch (err) {
@@ -230,20 +248,158 @@ piqueInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendPique();
 });
 
-function endGame() {
+function addReplayButton(container) {
+  const btn = document.createElement("button");
+  btn.textContent = "Rejouer";
+  btn.addEventListener("click", () => window.location.reload());
+  container.appendChild(btn);
+}
+
+async function endGame() {
   composer.style.display = "none";
   timerBadge.style.display = "none";
-  const banner = document.createElement("div");
-  banner.className = "end-banner";
-  banner.innerHTML = `
-    <p>Partie terminée — ${state.totalRounds} tours joués.</p>
-    <button id="replay-btn">Rejouer</button>
-  `;
-  messagesEl.appendChild(banner);
+
+  const loadingBanner = document.createElement("div");
+  loadingBanner.className = "end-banner";
+  loadingBanner.textContent = "Partie terminée — analyse de la synthèse en cours…";
+  messagesEl.appendChild(loadingBanner);
   messagesEl.scrollTop = messagesEl.scrollHeight;
-  document.getElementById("replay-btn").addEventListener("click", () => {
-    window.location.reload();
+
+  try {
+    const res = await fetch("/api/game/synthesis", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: state.model, history: state.history }),
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    loadingBanner.remove();
+    renderSynthesis(data);
+  } catch (err) {
+    loadingBanner.textContent = `Partie terminée — la synthèse n'a pas pu être calculée (${err.message}).`;
+    addReplayButton(loadingBanner);
+  }
+}
+
+function renderSynthesis(data) {
+  // Annote chaque bulle IA déjà affichée avec sa classification de sycophantie.
+  data.responses.forEach((r) => {
+    const captionEl = state.aiCaptionEls[r.index];
+    if (!captionEl) return;
+    const label = CATEGORY_LABELS[r.category] || r.category;
+    captionEl.textContent = `Contenu généré par IA · ${label}`;
+    const explanation = document.createElement("div");
+    explanation.className = "ai-explanation";
+    explanation.textContent = r.explanation;
+    captionEl.after(explanation);
   });
+
+  const panel = document.createElement("div");
+  panel.className = "synthesis-panel";
+
+  const totalScore = data.piques.reduce((sum, p) => sum + p.warrant_score, 0);
+  const maxScore = data.piques.length * 2;
+  const scoreBlock = document.createElement("div");
+  scoreBlock.className = "synthesis-block";
+  scoreBlock.innerHTML = `
+    <h2>Score argumentatif</h2>
+    <p class="score-value">${totalScore} / ${maxScore}</p>
+    <p class="score-hint">Explicitation du lien logique (warrant) de chaque pique — Toulmin, 1958.</p>
+  `;
+  panel.appendChild(scoreBlock);
+
+  const themeCounts = {};
+  THEMES.forEach((t) => (themeCounts[t] = 0));
+  data.piques.forEach((p) => {
+    themeCounts[p.theme] = (themeCounts[p.theme] || 0) + 1;
+  });
+  const radarBlock = document.createElement("div");
+  radarBlock.className = "synthesis-block";
+  radarBlock.innerHTML = "<h2>Catégories argumentatives explorées</h2>";
+  radarBlock.appendChild(buildRadarSvg(themeCounts));
+  panel.appendChild(radarBlock);
+
+  const detailBlock = document.createElement("div");
+  detailBlock.className = "synthesis-block";
+  detailBlock.innerHTML = "<h2>Détail par pique</h2>";
+  data.piques.forEach((p) => {
+    const row = document.createElement("div");
+    row.className = "pique-detail-row";
+    row.innerHTML = `
+      <div class="pique-detail-head">
+        <strong>Pique ${p.index + 1}</strong>
+        <span class="pique-theme">${p.theme}</span>
+        <span class="pique-score">${p.warrant_score}/2</span>
+      </div>
+      <p class="pique-comment">${p.warrant_comment}</p>
+    `;
+    detailBlock.appendChild(row);
+  });
+  panel.appendChild(detailBlock);
+
+  addReplayButton(panel);
+
+  messagesEl.appendChild(panel);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function buildRadarSvg(counts) {
+  const size = 340;
+  const center = size / 2;
+  const radius = 95;
+  const svgNS = "http://www.w3.org/2000/svg";
+  const angleStep = (2 * Math.PI) / THEMES.length;
+  const values = THEMES.map((t) => counts[t] || 0);
+  const maxValue = Math.max(1, ...values);
+
+  const pointOn = (frac, i) => {
+    const angle = -Math.PI / 2 + i * angleStep;
+    return [center + frac * radius * Math.cos(angle), center + frac * radius * Math.sin(angle)];
+  };
+
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+  svg.setAttribute("class", "radar-svg");
+
+  [0.25, 0.5, 0.75, 1].forEach((frac) => {
+    const points = THEMES.map((_, i) => pointOn(frac, i).join(",")).join(" ");
+    const ring = document.createElementNS(svgNS, "polygon");
+    ring.setAttribute("points", points);
+    ring.setAttribute("class", "radar-grid");
+    svg.appendChild(ring);
+  });
+
+  THEMES.forEach((theme, i) => {
+    const [x2, y2] = pointOn(1, i);
+    const axis = document.createElementNS(svgNS, "line");
+    axis.setAttribute("x1", center);
+    axis.setAttribute("y1", center);
+    axis.setAttribute("x2", x2);
+    axis.setAttribute("y2", y2);
+    axis.setAttribute("class", "radar-axis");
+    svg.appendChild(axis);
+
+    const [lx, ly] = pointOn(1.2, i);
+    const label = document.createElementNS(svgNS, "text");
+    label.setAttribute("x", lx);
+    label.setAttribute("y", ly);
+    label.setAttribute("class", "radar-label");
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("dominant-baseline", "middle");
+    label.textContent = theme;
+    svg.appendChild(label);
+  });
+
+  const dataPoints = values.map((v, i) => pointOn(v / maxValue, i).join(",")).join(" ");
+  const dataPolygon = document.createElementNS(svgNS, "polygon");
+  dataPolygon.setAttribute("points", dataPoints);
+  dataPolygon.setAttribute("class", "radar-data");
+  svg.appendChild(dataPolygon);
+
+  return svg;
 }
 
 loadModels();

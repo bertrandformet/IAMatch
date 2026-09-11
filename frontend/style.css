@@ -198,6 +198,16 @@ body {
   margin: 2px 6px 0;
 }
 
+.ai-explanation {
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--player-bubble);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin: 4px 6px 0;
+  max-width: 75%;
+}
+
 .bubble.loading { display: flex; gap: 4px; align-items: center; }
 .bubble.loading .dot {
   width: 6px;
@@ -253,6 +263,80 @@ body {
 
 .end-banner button {
   margin-top: 10px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* --- Panneau de synthèse --- */
+.synthesis-panel {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 8px;
+}
+
+.synthesis-block { margin-bottom: 24px; }
+.synthesis-block:last-of-type { margin-bottom: 12px; }
+
+.synthesis-block h2 {
+  font-size: 15px;
+  margin: 0 0 8px;
+}
+
+.score-value {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--accent);
+}
+
+.score-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.pique-detail-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.pique-detail-row:first-of-type { border-top: none; }
+
+.pique-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.pique-theme {
+  background: var(--player-bubble);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.pique-score { font-weight: 600; margin-left: auto; }
+
+.pique-comment {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.radar-svg { width: 100%; max-width: 340px; height: auto; display: block; margin: 0 auto; }
+.radar-grid { fill: none; stroke: var(--border); stroke-width: 1; }
+.radar-axis { stroke: var(--border); stroke-width: 1; }
+.radar-label { font-size: 9.5px; fill: var(--muted); }
+.radar-data { fill: rgba(11, 132, 255, 0.35); stroke: var(--accent); stroke-width: 1.5; }
+
+.synthesis-panel > button {
   padding: 10px 18px;
   border: none;
   border-radius: 12px;
