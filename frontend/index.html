@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IA Match</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- Écran de configuration -->
+<section id="setup-screen" class="screen active">
+  <div class="setup-card">
+    <h1>IA Match</h1>
+    <p class="subtitle">Mode individuel — configure ta partie avant de lancer le clash.</p>
+
+    <div class="field">
+      <label for="model-select">Modèle Albert</label>
+      <select id="model-select"></select>
+    </div>
+
+    <div class="field">
+      <label for="rounds-select">Nombre de tours</label>
+      <select id="rounds-select">
+        <option value="3">3</option>
+        <option value="4" selected>4</option>
+        <option value="5">5</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <div class="checkbox-row">
+        <input type="checkbox" id="timer-toggle" />
+        <label for="timer-toggle">Activer un timer par pique</label>
+      </div>
+      <div class="field" id="timer-duration-field" style="display:none;">
+        <label for="timer-duration">Durée (secondes)</label>
+        <input type="number" id="timer-duration" value="30" min="10" max="120" />
+      </div>
+    </div>
+
+    <button id="start-btn">Lancer la partie</button>
+    <p id="setup-error"></p>
+  </div>
+</section>
+
+<!-- Écran de jeu -->
+<section id="game-screen" class="screen">
+  <header class="game-header">
+    <svg class="neural-avatar" id="neural-avatar" viewBox="0 0 40 40">
+      <line class="edge" x1="8" y1="10" x2="20" y2="20" />
+      <line class="edge" x1="8" y1="30" x2="20" y2="20" />
+      <line class="edge" x1="32" y1="10" x2="20" y2="20" />
+      <line class="edge" x1="32" y1="30" x2="20" y2="20" />
+      <circle class="node" cx="8" cy="10" r="4" />
+      <circle class="node" cx="8" cy="30" r="4" />
+      <circle class="node" cx="20" cy="20" r="5" />
+      <circle class="node" cx="32" cy="10" r="4" />
+      <circle class="node" cx="32" cy="30" r="4" />
+    </svg>
+    <div class="header-info">
+      <div class="round-counter" id="round-counter">Tour 1 / 4</div>
+      <div class="model-name" id="model-name-label"></div>
+    </div>
+    <div class="timer-badge" id="timer-badge" style="display:none;"></div>
+  </header>
+
+  <div id="messages"></div>
+
+  <footer class="composer" id="composer">
+    <input type="text" id="pique-input" placeholder="Moi au moins…" autocomplete="off" />
+    <button id="send-btn">Envoyer</button>
+  </footer>
+</section>
+
+<script src="app.js"></script>
+</body>
+</html>
