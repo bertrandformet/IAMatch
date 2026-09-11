@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IA Match — À propos de l'IA</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="pages.css" />
+</head>
+<body>
+
+<main class="page-container">
+  <a class="back-link" href="index.html">← Revenir au jeu</a>
+  <h1>À propos de l'IA</h1>
+  <p class="page-intro">
+    Ce que tu affrontes réellement dans IA Match, en clair.
+  </p>
+
+  <div class="page-block">
+    <h2>Un modèle de langage, pas une personne</h2>
+    <p>
+      Quand tu joues, tu échanges avec un <strong>modèle de langage</strong> — un programme
+      entraîné sur d'immenses quantités de texte pour prédire, mot après mot, la suite la plus
+      plausible d'une conversation. Il n'a ni conscience, ni intentions, ni enjeu personnel dans
+      l'échange : il génère une réponse statistiquement vraisemblable, pas une opinion vécue.
+    </p>
+    <p>
+      IA Match utilise exclusivement l'<a href="https://albert.api.etalab.gouv.fr" target="_blank" rel="noopener noreferrer">API Albert</a>,
+      l'infrastructure d'IA souveraine développée par la DINUM (Direction interministérielle du
+      numérique). Selon la partie, le modèle choisi peut être un modèle ouvert (« open weight »)
+      comme Mistral, GPT-OSS ou DeepSeek, mis à disposition via Albert.
+    </p>
+  </div>
+
+  <div class="page-block">
+    <h2>Contenu marqué comme généré par IA</h2>
+    <p>
+      Chaque bulle affichée à droite (les réponses de l'IA) est techniquement identifiable comme
+      contenu généré artificiellement : un attribut <code>data-ai-generated="true"</code> dans le
+      code de la page, et une légende visible sous chaque bulle. Ce marquage répond à une
+      obligation légale (règlement européen sur l'IA, Art. 50) — informer que du contenu est
+      généré par une IA, pas le dissimuler.
+    </p>
+  </div>
+
+  <div class="page-block">
+    <h2>Pourquoi le préciser ?</h2>
+    <p>
+      Le règlement européen sur l'IA (AI Act, Art. 50) impose d'informer toute personne qu'elle
+      interagit avec un système d'IA, sauf si c'est déjà évident du contexte. Le principe même du
+      jeu (« clasher une IA ») rend cette interaction assez explicite — mais on préfère le dire
+      clairement plutôt que de supposer que c'est acquis.
+    </p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <nav class="footer-links">
+    <a href="anonymisation.html">Anonymisation</a>
+    <a href="fondements.html">Fondements</a>
+    <a href="a-propos-ia.html">À propos de l'IA</a>
+    <a href="https://github.com/uneIAparjour/IAMatch" target="_blank" rel="noopener noreferrer">Code source (GitHub)</a>
+  </nav>
+  <p class="footer-license">
+    IA Match — <a href="https://uneiaparjour.fr" target="_blank" rel="noopener noreferrer">Une IA par jour</a> ·
+    <a href="https://creativecommons.org/licenses/by/4.0/deed.fr" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> ·
+    <a href="mailto:contact@uneiaparjour.fr">contact@uneiaparjour.fr</a>
+  </p>
+</footer>
+
+</body>
+</html>

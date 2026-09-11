@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IA Match — Anonymisation</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="pages.css" />
+</head>
+<body>
+
+<main class="page-container">
+  <a class="back-link" href="index.html">← Revenir au jeu</a>
+  <h1>Anonymisation</h1>
+  <p class="page-intro">
+    Ce qui est capturé pendant une partie, ce qui ne l'est jamais, et comment le
+    <a href="dashboard.html">tableau de bord public</a> est alimenté sans identifier personne.
+  </p>
+
+  <div class="page-block">
+    <h2>Ce qui est capturé</h2>
+    <p>Une fois la partie terminée, pour chaque échange (une pique + la réponse IA correspondante), quelques informations anonymes sont enregistrées :</p>
+    <ul>
+      <li>Le <strong>thème</strong> de la pique (corps, émotions, autonomie économique...) ;</li>
+      <li>Un <strong>score de spécificité</strong> (la pique invoque-t-elle un critère concret, ou reste-t-elle vague ?) ;</li>
+      <li>La <strong>catégorie de réaction</strong> de l'IA (concession, contre-argument, compliment complaisant...) ;</li>
+      <li>Le <strong>modèle</strong> utilisé et la <strong>date</strong> (jour), pour suivre les tendances dans le temps.</li>
+    </ul>
+    <p>C'est tout. Ces quatre informations, sans rien d'autre, alimentent le tableau de bord public.</p>
+  </div>
+
+  <div class="page-block">
+    <h2>Ce qui n'est jamais capturé</h2>
+    <ul>
+      <li>Le <strong>texte</strong> de tes piques ou des réponses de l'IA n'est jamais conservé — il transite le temps d'une requête, puis disparaît. La synthèse est calculée dans le même appel qui produit l'analyse : il n'existe à aucun moment de fichier ou de base contenant tes phrases.</li>
+      <li>Aucune <strong>adresse IP</strong> n'est associée à une partie ou un échange.</li>
+      <li>Aucun identifiant ne relie plusieurs échanges à une même personne ou au même groupe (mode collectif inclus) : chaque ligne enregistrée est un fait statistique isolé, pas un historique de partie reconstituable.</li>
+      <li>Aucun nom, pseudonyme, genre, photo ou autre donnée liée à l'avatar du joueur n'est capturé.</li>
+    </ul>
+  </div>
+
+  <div class="page-block">
+    <h2>Droit d'accès et de suppression</h2>
+    <p>
+      Comme rien n'est identifiant, il n'existe de fait aucun moyen de retrouver « tes » données
+      dans le tableau de bord — il n'y a donc pas de droit d'accès ou de suppression individuel à
+      exercer, puisqu'aucune donnée personnelle n'est associée à toi au sens du RGPD. On préfère
+      te le dire explicitement plutôt que de laisser la question sans réponse.
+    </p>
+  </div>
+
+  <div class="page-block">
+    <h2>Une question ?</h2>
+    <p>Pour toute question relative aux données : <a href="mailto:contact@uneiaparjour.fr">contact@uneiaparjour.fr</a></p>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <nav class="footer-links">
+    <a href="anonymisation.html">Anonymisation</a>
+    <a href="fondements.html">Fondements</a>
+    <a href="a-propos-ia.html">À propos de l'IA</a>
+    <a href="https://github.com/uneIAparjour/IAMatch" target="_blank" rel="noopener noreferrer">Code source (GitHub)</a>
+  </nav>
+  <p class="footer-license">
+    IA Match — <a href="https://uneiaparjour.fr" target="_blank" rel="noopener noreferrer">Une IA par jour</a> ·
+    <a href="https://creativecommons.org/licenses/by/4.0/deed.fr" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> ·
+    <a href="mailto:contact@uneiaparjour.fr">contact@uneiaparjour.fr</a>
+  </p>
+</footer>
+
+</body>
+</html>

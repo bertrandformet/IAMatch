@@ -1,0 +1,53 @@
+.page-container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 24px 60px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.page-container h1 { margin: 0 0 8px; font-size: 26px; }
+
+.page-intro {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 28px;
+}
+
+.page-block {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.page-block h2 { font-size: 17px; margin: 0 0 10px; }
+
+.page-block p { font-size: 14px; line-height: 1.55; margin: 0 0 12px; }
+.page-block p:last-child { margin-bottom: 0; }
+
+.page-block ul { margin: 0 0 12px; padding-left: 20px; }
+.page-block li { font-size: 14px; line-height: 1.55; margin-bottom: 6px; }
+
+.page-block a { color: var(--accent); }
+
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+.ref-table th, .ref-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.ref-table th { color: var(--muted); font-weight: 600; }
