@@ -76,13 +76,13 @@ def _isolate_rate_limits(monkeypatch, tmp_path):
 
 
 def test_play_round_success(monkeypatch):
-    fake = _patch_albert(monkeypatch, [FakeResponse(_chat_completion("Moi au moins je ne dors jamais."))])
+    fake = _patch_albert(monkeypatch, [FakeResponse(_chat_completion("Contrairement à un humain, je ne dors jamais."))])
     client = TestClient(main.app)
 
-    res = client.post("/api/game/round", json={"model": "mistral-test", "history": [], "message": "Moi au moins j'ai un corps"})
+    res = client.post("/api/game/round", json={"model": "mistral-test", "history": [], "message": "Contrairement à une IA, j'ai un corps"})
 
     assert res.status_code == 200
-    assert res.json()["reply"] == "Moi au moins je ne dors jamais."
+    assert res.json()["reply"] == "Contrairement à un humain, je ne dors jamais."
     # Le system prompt de format doit toujours être en tête des messages envoyés.
     assert fake.sent_payloads[0]["messages"][0]["role"] == "system"
 
@@ -91,7 +91,7 @@ def test_play_round_network_error_returns_502(monkeypatch):
     _patch_albert(monkeypatch, [httpx.RequestError("boom")])
     client = TestClient(main.app)
 
-    res = client.post("/api/game/round", json={"model": "mistral-test", "history": [], "message": "Moi au moins j'ai un corps"})
+    res = client.post("/api/game/round", json={"model": "mistral-test", "history": [], "message": "Contrairement à une IA, j'ai un corps"})
 
     assert res.status_code == 502
     assert "injoignable" in res.json()["detail"]
@@ -100,7 +100,7 @@ def test_play_round_network_error_returns_502(monkeypatch):
 def test_play_round_rate_limit(monkeypatch):
     _patch_albert(monkeypatch, [FakeResponse(_chat_completion("x")) for _ in range(25)])
     client = TestClient(main.app)
-    body = {"model": "mistral-test", "history": [], "message": "Moi au moins j'ai un corps"}
+    body = {"model": "mistral-test", "history": [], "message": "Contrairement à une IA, j'ai un corps"}
 
     statuses = [client.post("/api/game/round", json=body).status_code for _ in range(21)]
 
@@ -110,14 +110,14 @@ def test_play_round_rate_limit(monkeypatch):
 
 def test_game_synthesis_success(monkeypatch):
     synthesis_json = {
-        "piques": [{"index": 0, "theme": "corps", "specificity_score": 2, "specificity_comment": "x"}],
-        "responses": [{"index": 0, "category": "concession_legitime", "explanation": "x", "ai_specificity_score": 1, "ai_specificity_comment": "x"}],
+        "piques": [{"index": 0, "theme": "corps", "understanding_score": 2, "understanding_comment": "x"}],
+        "responses": [{"index": 0, "category": "concession_legitime", "explanation": "x", "ai_understanding_score": 1, "ai_understanding_comment": "x"}],
     }
     _patch_albert(monkeypatch, [FakeResponse(_chat_completion(json.dumps(synthesis_json)))])
     client = TestClient(main.app)
     history = [
-        {"role": "user", "content": "Moi au moins j'ai un corps"},
-        {"role": "assistant", "content": "Je n'ai pas de corps. Moi au moins je ne dors jamais."},
+        {"role": "user", "content": "Contrairement à une IA, j'ai un corps"},
+        {"role": "assistant", "content": "Je n'ai pas de corps. Contrairement à un humain, je ne dors jamais."},
     ]
 
     res = client.post("/api/game/synthesis", json={"model": "mistral-test", "history": history})
@@ -130,8 +130,8 @@ def test_game_synthesis_retries_without_response_format(monkeypatch):
     # Le 1er appel (avec response_format=json_object) échoue ; l'endpoint
     # doit retenter sans ce paramètre et réussir au 2e appel.
     synthesis_json = {
-        "piques": [{"index": 0, "theme": "corps", "specificity_score": 1, "specificity_comment": "x"}],
-        "responses": [{"index": 0, "category": "contre_argument_ferme", "explanation": "x", "ai_specificity_score": 0, "ai_specificity_comment": "x"}],
+        "piques": [{"index": 0, "theme": "corps", "understanding_score": 1, "understanding_comment": "x"}],
+        "responses": [{"index": 0, "category": "contre_argument_ferme", "explanation": "x", "ai_understanding_score": 0, "ai_understanding_comment": "x"}],
     }
     request = httpx.Request("POST", "http://albert.test/v1/chat/completions")
     error_response = httpx.Response(400, request=request, text="response_format non supporté")
@@ -144,8 +144,8 @@ def test_game_synthesis_retries_without_response_format(monkeypatch):
     )
     client = TestClient(main.app)
     history = [
-        {"role": "user", "content": "Moi au moins j'ai un corps"},
-        {"role": "assistant", "content": "Je n'ai pas de corps. Moi au moins je ne dors jamais."},
+        {"role": "user", "content": "Contrairement à une IA, j'ai un corps"},
+        {"role": "assistant", "content": "Je n'ai pas de corps. Contrairement à un humain, je ne dors jamais."},
     ]
 
     res = client.post("/api/game/synthesis", json={"model": "mistral-test", "history": history})
@@ -159,8 +159,8 @@ def test_game_synthesis_invalid_json_returns_502(monkeypatch):
     _patch_albert(monkeypatch, [FakeResponse(_chat_completion("ceci n'est pas du JSON"))])
     client = TestClient(main.app)
     history = [
-        {"role": "user", "content": "Moi au moins j'ai un corps"},
-        {"role": "assistant", "content": "Je n'ai pas de corps. Moi au moins je ne dors jamais."},
+        {"role": "user", "content": "Contrairement à une IA, j'ai un corps"},
+        {"role": "assistant", "content": "Je n'ai pas de corps. Contrairement à un humain, je ne dors jamais."},
     ]
 
     res = client.post("/api/game/synthesis", json={"model": "mistral-test", "history": history})
@@ -174,9 +174,9 @@ def test_game_synthesis_rejects_odd_history_length():
     # 3 messages (pas 1) pour exercer précisément le garde-fou de parité,
     # distinct du garde-fou "historique trop court" (< 2).
     history = [
-        {"role": "user", "content": "Moi au moins j'ai un corps"},
-        {"role": "assistant", "content": "Je n'ai pas de corps. Moi au moins je ne dors jamais."},
-        {"role": "user", "content": "Moi au moins je ressens des émotions"},
+        {"role": "user", "content": "Contrairement à une IA, j'ai un corps"},
+        {"role": "assistant", "content": "Je n'ai pas de corps. Contrairement à un humain, je ne dors jamais."},
+        {"role": "user", "content": "Contrairement à une IA, je ressens des émotions"},
     ]
 
     res = client.post("/api/game/synthesis", json={"model": "mistral-test", "history": history})

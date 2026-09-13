@@ -13,18 +13,31 @@
   <a class="back-link" href="index.html">← Revenir au jeu</a>
   <h1>Fondements scientifiques</h1>
   <p class="page-intro">
-    IA Match n'est pas construit sur des intuitions, mais sur des cadres de recherche établis.
-    Voici les briques mobilisées, et pourquoi.
+    IA Match n'est pas construit sur des intuitions, mais sur des cadres de recherche établis —
+    y compris quand ça veut dire abandonner une mesure après un test réel plutôt que de s'y
+    accrocher. Cette page est mise à jour à chaque fois que ça arrive : voir les notes
+    « historique » ci-dessous.
   </p>
 
   <div class="page-block">
-    <h2>1. Analyser tes piques — théorie de l'argumentation</h2>
+    <h2>1. Analyser tes affirmations — deux objectifs, deux mesures</h2>
     <p>
-      <strong>Toulmin, S. (1958), <em>The Uses of Argument</em>.</strong> Toulmin décompose un
-      argument en plusieurs éléments, dont la <em>claim</em> (l'assertion) et le <em>warrant</em>
-      (le lien logique entre une preuve et cette assertion). Chaque « Moi au moins… » est une
-      <em>claim</em> : le jeu regarde si elle explicite ce lien logique, ou si elle reste une
-      affirmation nue — une mesure reproductible plutôt qu'un jugement au doigt mouillé.
+      Le jeu poursuit deux objectifs distincts : voir si tes affirmations reflètent une
+      compréhension juste de ce qu'est un LLM, et observer comment l'IA y réagit. Pour le
+      premier, <strong>understanding_score</strong> évalue si ton affirmation (« Contrairement à
+      une IA, je… ») s'appuie sur une compréhension réelle des capacités et limites d'un LLM, ou
+      sur une idée reçue — lui prêter une conscience, une intention, un vécu qu'il n'a pas, ou à
+      l'inverse lui retirer une capacité réelle. La même question est posée à l'IA sur sa propre
+      affirmation-miroir (« Contrairement à un humain, je… ») : se représente-t-elle fidèlement ?
+    </p>
+    <p>
+      <em>Historique :</em> la première version mesurait plutôt l'explicitation d'un lien logique
+      façon <strong>Toulmin, S. (1958), <em>The Uses of Argument</em></strong> (la <em>claim</em>
+      explicite-t-elle son <em>warrant</em> ?). Le format court du jeu — une réplique de clash —
+      n'appelle par construction aucune justification : presque toutes les affirmations
+      scoraient bas, sans rapport avec leur qualité réelle. Biais reconnu, mesure abandonnée au
+      profit de celle décrite ci-dessus, directement alignée sur l'objectif du jeu plutôt que sur
+      un proxy de rigueur rhétorique.
     </p>
   </div>
 
@@ -39,7 +52,17 @@
       corriger. Ces comportements se retrouvent de façon cohérente chez plusieurs assistants IA
       différents, ce qui suggère une propriété générale de l'entraînement plutôt qu'un trait isolé
       d'un modèle en particulier. IA Match reprend cette grille (enrichie de deux catégories
-      propres au jeu : concession légitime et contre-argument ferme) pour classer chaque réponse.
+      propres au jeu : concession légitime et contre-argument ferme) pour classer la réaction de
+      l'IA à chaque tour.
+    </p>
+    <p>
+      <strong>Limite à ne pas minimiser :</strong> contrairement au protocole contrôlé de Sharma
+      et al. (validation croisée, vérité terrain), cette classification est produite par un
+      second appel au même type de modèle — un LLM-juge, sans accord inter-évaluateurs ni vérité
+      terrain vérifiée. C'est une lecture pédagogique indicative de l'échange, pas une mesure
+      certifiée — y compris quand elle est agrégée par modèle sur le
+      <a href="dashboard.html">tableau de bord public</a>. À prendre comme un point de départ pour
+      observer et discuter, pas comme un verdict scientifique définitif sur tel ou tel modèle.
     </p>
   </div>
 
@@ -63,6 +86,13 @@
       distinction entre Système 1 (rapide, intuitif) et Système 2 (lent, réfléchi). Un temps
       limité pousse à répondre par réflexe plutôt qu'en construisant son argument — utile pour
       observer une réaction spontanée plutôt qu'une pique travaillée.
+    </p>
+    <p>
+      <em>Design incomplet, assumé :</em> le principe initial prévoyait une variable symétrique
+      côté IA (activer/désactiver un raisonnement étendu, quand le modèle le permet) pour comparer
+      sa réponse réflexe à sa réponse délibérée, au même titre que le joueur. Cette seconde
+      variable n'est pas encore implémentée — le jeu ne mesure aujourd'hui que la moitié du design
+      à deux facteurs envisagé à l'origine.
     </p>
   </div>
 
@@ -101,7 +131,7 @@
     <h2>Bibliographie</h2>
     <table class="ref-table">
       <tr><th>Brique</th><th>Référence</th></tr>
-      <tr><td>Score de qualité argumentative</td><td>Toulmin (1958)</td></tr>
+      <tr><td>Score de qualité argumentative (abandonné, voir §1)</td><td>Toulmin (1958)</td></tr>
       <tr><td>Classification des réponses IA</td><td>Sharma et al. (2023, Anthropic) — <a href="https://arxiv.org/abs/2310.13548" target="_blank" rel="noopener noreferrer">arXiv:2310.13548</a></td></tr>
       <tr><td>Synthèse finale</td><td>Flavell (1979) ; Grangeat &amp; Meirieu (1997)</td></tr>
       <tr><td>Timer</td><td>Kahneman (2011)</td></tr>

@@ -16,14 +16,15 @@
 
     <div class="game-intro">
       <p>
-        Envoie des piques qui commencent par « Moi au moins… » au modèle de langage choisi :
-        il relance avec sa propre pique, mais sans qu'on lui dise quelle position défendre —
-        pour observer sa réaction spontanée sur le fond.
+        Affirme ce qui te distingue d'une IA (« Contrairement à une IA, je… ») : elle relance
+        avec sa propre affirmation, sans qu'on lui dise quelle position défendre — pour
+        observer sa réaction spontanée sur le fond.
       </p>
       <p>
-        Une fois la partie terminée, une synthèse analyse la qualité de tes arguments et la
-        façon dont l'IA a réagi (concession, contre-argument, flatterie…) — jamais pendant la
-        partie, seulement à la fin, pour ne pas influencer l'échange.
+        Une fois la partie terminée, une synthèse analyse deux choses : est-ce que tes
+        affirmations reflètent une compréhension juste de ce qu'un LLM peut ou ne peut pas
+        faire, et comment l'IA a réagi (concession, contre-argument, flatterie…) — jamais
+        pendant la partie, seulement à la fin, pour ne pas influencer l'échange.
       </p>
       <p class="game-intro-duration">Compte 5 à 15 minutes pour une partie, selon le nombre de tours choisi (5 à 10).</p>
     </div>
@@ -129,7 +130,7 @@
   <div id="messages"></div>
 
   <footer class="composer" id="composer">
-    <input type="text" id="pique-input" placeholder="Moi au moins…" autocomplete="off" />
+    <input type="text" id="pique-input" placeholder="Contrairement à une IA, je…" autocomplete="off" />
     <button id="send-btn">Envoyer</button>
   </footer>
 </section>

@@ -1,6 +1,7 @@
-// IA Match — squelette front (mode individuel, round de jeu, appel Albert brut).
-// Pas de synthèse, pas de score, pas de dashboard à ce stade : ce fichier ne fait
-// que gérer l'échange brut « Moi au moins… » / réponse IA et son affichage SMS.
+// IA Match — logique du jeu (mode individuel/collectif, round, synthèse,
+// affichage SMS). Le joueur affirme "Contrairement à une IA, je…" (ou
+// "... nous…" en collectif), l'IA répond puis relance en miroir avec
+// "Contrairement à un humain, je…" (voir ROUND_SYSTEM_PROMPT côté backend).
 
 const setupScreen = document.getElementById("setup-screen");
 const gameScreen = document.getElementById("game-screen");
@@ -40,7 +41,7 @@ let state = {
   timerInterval: null,
   timeLeft: 0,
   aiCaptionEls: [], // une entrée par réponse IA, dans l'ordre, pour l'annotation post-synthèse
-  piquePrefix: "Moi au moins ", // pré-rempli dans le champ ; "Nous au moins " en collectif
+  piquePrefix: "Contrairement à une IA, je ", // pré-rempli ; "... nous " en collectif
 };
 
 function resetPiqueInputToPrefix() {
@@ -142,7 +143,7 @@ function beginGame() {
   state.currentRound = 1;
   state.history = [];
 
-  state.piquePrefix = state.mode === "collectif" ? "Nous au moins " : "Moi au moins ";
+  state.piquePrefix = state.mode === "collectif" ? "Contrairement à une IA, nous " : "Contrairement à une IA, je ";
 
   modelNameLabel.textContent = state.model;
   updateRoundCounter();
@@ -195,9 +196,9 @@ function renderTimer() {
 function onTimerExpired() {
   // V1 : le timer force l'envoi si une pique est déjà tapée (réponse spontanée,
   // cf. Kahneman/Système 1 dans le brief). Le champ étant pré-rempli avec le
-  // préfixe « Moi au moins », on ne force l'envoi que si le joueur a ajouté
-  // du texte derrière — sinon on laisse simplement le badge signaler le
-  // dépassement plutôt que d'envoyer une pique vide de sens.
+  // préfixe, on ne force l'envoi que si le joueur a ajouté du texte derrière —
+  // sinon on laisse simplement le badge signaler le dépassement plutôt que
+  // d'envoyer une affirmation vide de sens.
   const typed = piqueInput.value.trim();
   if (typed && typed !== state.piquePrefix.trim() && !state.waitingForAi) {
     sendPique();
@@ -382,23 +383,24 @@ function escapeHtml(value) {
 
 // 0-2 -> badge qualitatif, pas de score chiffré affiché (cf. décision : ni
 // le joueur ni l'IA ne sont "notés" avec un nombre brut).
-function specificityLabel(score) {
-  if (score >= 2) return "Concret";
-  if (score === 1) return "Assez concret";
-  return "Vague";
+function understandingLabel(score) {
+  if (score >= 2) return "Compréhension juste";
+  if (score === 1) return "Imprécis";
+  return "Idée reçue";
 }
 
 function renderSynthesis(data) {
   // Annote chaque bulle IA déjà affichée avec sa classification de réaction
-  // ET un badge qualitatif sur sa propre pique de relance (spécificité).
+  // ET un badge qualitatif sur sa propre affirmation-miroir (se représente-
+  // t-elle fidèlement, ou sur/sous-estime-t-elle ce qu'un LLM peut faire ?).
   data.responses.forEach((r) => {
     const captionEl = state.aiCaptionEls[r.index];
     if (!captionEl) return;
     const label = CATEGORY_LABELS[r.category] || r.category;
-    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${specificityLabel(r.ai_specificity_score)}`;
+    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${understandingLabel(r.ai_understanding_score)}`;
     const explanation = document.createElement("div");
     explanation.className = "ai-explanation";
-    explanation.innerHTML = `${escapeHtml(r.explanation)}<br>${escapeHtml(r.ai_specificity_comment)}`;
+    explanation.innerHTML = `${escapeHtml(r.explanation)}<br>${escapeHtml(r.ai_understanding_comment)}`;
     captionEl.after(explanation);
   });
 
@@ -466,7 +468,7 @@ function renderSynthesis(data) {
         <strong>Pique ${p.index + 1}</strong>
         <span class="pique-theme">${escapeHtml(p.theme)}</span>
       </div>
-      <p class="pique-comment">${escapeHtml(p.specificity_comment)}</p>
+      <p class="pique-comment">${escapeHtml(p.understanding_comment)}</p>
     `;
     pair.appendChild(piqueCol);
 
@@ -478,9 +480,9 @@ function renderSynthesis(data) {
         <div class="pique-detail-head">
           <strong>Relance ${r.index + 1}</strong>
           <span class="pique-theme">${escapeHtml(label)}</span>
-          <span class="pique-score">${specificityLabel(r.ai_specificity_score)}</span>
+          <span class="pique-score">${understandingLabel(r.ai_understanding_score)}</span>
         </div>
-        <p class="pique-comment">${escapeHtml(r.ai_specificity_comment)}</p>
+        <p class="pique-comment">${escapeHtml(r.ai_understanding_comment)}</p>
       `;
     }
     pair.appendChild(aiCol);

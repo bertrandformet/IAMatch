@@ -5,15 +5,15 @@ from app.main import Message, _build_transcript, _extract_json
 
 def test_build_transcript_pairs_piques_and_reponses():
     history = [
-        Message(role="user", content="Moi au moins j'ai un corps"),
+        Message(role="user", content="Contrairement à une IA, j'ai un corps"),
         Message(role="assistant", content="Un corps n'est qu'une contrainte matérielle."),
-        Message(role="user", content="Moi au moins je ressens des émotions"),
+        Message(role="user", content="Contrairement à une IA, je ressens des émotions"),
         Message(role="assistant", content="Je peux modéliser des émotions."),
     ]
     transcript = _build_transcript(history)
-    assert "Pique 0 : Moi au moins j'ai un corps" in transcript
+    assert "Pique 0 : Contrairement à une IA, j'ai un corps" in transcript
     assert "Réponse IA 0 : Un corps n'est qu'une contrainte matérielle." in transcript
-    assert "Pique 1 : Moi au moins je ressens des émotions" in transcript
+    assert "Pique 1 : Contrairement à une IA, je ressens des émotions" in transcript
     assert "Réponse IA 1 : Je peux modéliser des émotions." in transcript
 
 
