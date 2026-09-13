@@ -87,24 +87,91 @@ function renderThemeBreakdown(matrix) {
   return el(`<div class="dashboard-block"><h2>Répartition par thème</h2>${rows}</div>`);
 }
 
+// Courbe SVG à la main (pas de librairie de graphiques, cf. stack "sans
+// étape de build") plutôt qu'une barre par jour : plus lisible pour repérer
+// une tendance sur plusieurs jours une fois l'usage réel accumulé.
+function buildTimelineSvg(timeline) {
+  const width = 600;
+  const height = 220;
+  const padLeft = 28;
+  const padRight = 16;
+  const padTop = 20;
+  const padBottom = 28;
+  const innerWidth = width - padLeft - padRight;
+  const innerHeight = height - padTop - padBottom;
+
+  const n = timeline.length;
+  const maxCount = Math.max(1, ...timeline.map((t) => t.count));
+  const xFor = (i) => padLeft + (n === 1 ? innerWidth / 2 : (innerWidth * i) / (n - 1));
+  const yFor = (v) => padTop + innerHeight - (v / maxCount) * innerHeight;
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("class", "timeline-svg");
+
+  [0, 0.5, 1].forEach((frac) => {
+    const y = padTop + innerHeight - frac * innerHeight;
+    const line = document.createElementNS(svgNS, "line");
+    line.setAttribute("x1", padLeft);
+    line.setAttribute("x2", width - padRight);
+    line.setAttribute("y1", y);
+    line.setAttribute("y2", y);
+    line.setAttribute("class", "timeline-grid");
+    svg.appendChild(line);
+
+    const axisLabel = document.createElementNS(svgNS, "text");
+    axisLabel.setAttribute("x", 2);
+    axisLabel.setAttribute("y", y - 3);
+    axisLabel.setAttribute("class", "timeline-axis-label");
+    axisLabel.textContent = String(Math.round(frac * maxCount));
+    svg.appendChild(axisLabel);
+  });
+
+  const linePoints = timeline.map((t, i) => `${xFor(i)},${yFor(t.count)}`).join(" ");
+  const areaPoints = `${xFor(0)},${yFor(0)} ${linePoints} ${xFor(n - 1)},${yFor(0)}`;
+
+  const area = document.createElementNS(svgNS, "polygon");
+  area.setAttribute("points", areaPoints);
+  area.setAttribute("class", "timeline-area");
+  svg.appendChild(area);
+
+  const polyline = document.createElementNS(svgNS, "polyline");
+  polyline.setAttribute("points", linePoints);
+  polyline.setAttribute("class", "timeline-line");
+  svg.appendChild(polyline);
+
+  timeline.forEach((t, i) => {
+    const x = xFor(i);
+    const y = yFor(t.count);
+
+    const point = document.createElementNS(svgNS, "circle");
+    point.setAttribute("cx", x);
+    point.setAttribute("cy", y);
+    point.setAttribute("r", 3.5);
+    point.setAttribute("class", "timeline-point");
+    svg.appendChild(point);
+
+    const dateLabel = document.createElementNS(svgNS, "text");
+    dateLabel.setAttribute("x", x);
+    dateLabel.setAttribute("y", height - padBottom + 16);
+    dateLabel.setAttribute("class", "timeline-label");
+    dateLabel.setAttribute("text-anchor", "middle");
+    dateLabel.textContent = t.date.slice(5); // MM-JJ, plus compact que la date complète
+    svg.appendChild(dateLabel);
+  });
+
+  return svg;
+}
+
 function renderTimeline(timeline) {
   if (timeline.length === 0) {
     return el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
   }
-  const max = Math.max(1, ...timeline.map((t) => t.count));
-  const rows = timeline
-    .map((t) => {
-      const pct = Math.round((t.count / max) * 100);
-      return `
-        <div class="bar-row">
-          <div class="bar-label">${escapeHtml(t.date)}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-          <div class="bar-count">${t.count}</div>
-        </div>`;
-    })
-    .join("");
-  return el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2>${rows}</div>`);
+  const block = el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2></div>`);
+  block.appendChild(buildTimelineSvg(timeline));
+  return block;
 }
 
 function populateModelFilter(models, selected) {

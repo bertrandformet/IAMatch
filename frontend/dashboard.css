@@ -90,3 +90,11 @@
   text-align: center;
   padding: 20px 0;
 }
+
+.timeline-svg { width: 100%; height: auto; display: block; }
+.timeline-grid { stroke: var(--border); stroke-width: 1; }
+.timeline-area { fill: rgba(11, 132, 255, 0.12); stroke: none; }
+.timeline-line { fill: none; stroke: var(--accent); stroke-width: 2; }
+.timeline-point { fill: var(--accent); }
+.timeline-label { font-size: 10px; fill: var(--muted); }
+.timeline-axis-label { font-size: 9px; fill: var(--muted); }
