@@ -13,6 +13,19 @@ const CATEGORY_LABELS = {
 const contentEl = document.getElementById("dashboard-content");
 const modelFilterEl = document.getElementById("model-filter");
 
+// "category" et "theme" viennent de la base (produits par le modèle-analyste,
+// pas de code contrôlé côté serveur) et sont affichés à tout visiteur de
+// cette page publique — échappement systématique avant interpolation dans
+// un template innerHTML pour ne pas rouvrir la XSS stockée corrigée ici.
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function el(html) {
   const div = document.createElement("div");
   div.innerHTML = html.trim();
@@ -27,7 +40,7 @@ function renderCategoryFrequency(categoryFrequency) {
       const pct = Math.round((c.count / max) * 100);
       return `
         <div class="bar-row">
-          <div class="bar-label">${label}</div>
+          <div class="bar-label">${escapeHtml(label)}</div>
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
           <div class="bar-count">${c.count}</div>
         </div>`;
@@ -59,7 +72,7 @@ function renderThemeSplit(matrix) {
       const concedePct = Math.round((v.concede / total) * 100);
       return `
         <div class="theme-row">
-          <div class="theme-name">${theme}</div>
+          <div class="theme-name">${escapeHtml(theme)}</div>
           <div class="theme-split">
             <div class="split-concede" style="width:${concedePct}%"></div>
             <div class="split-counter" style="width:${100 - concedePct}%"></div>
@@ -90,7 +103,7 @@ function renderTimeline(timeline) {
       const pct = Math.round((t.count / max) * 100);
       return `
         <div class="bar-row">
-          <div class="bar-label">${t.date}</div>
+          <div class="bar-label">${escapeHtml(t.date)}</div>
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
           <div class="bar-count">${t.count}</div>
         </div>`;

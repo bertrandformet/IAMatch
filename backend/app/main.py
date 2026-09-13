@@ -14,6 +14,8 @@ import json
 import os
 import re
 import sqlite3
+import time
+from collections import defaultdict, deque
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,10 +23,10 @@ from typing import Optional
 
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(ROOT_DIR / ".env")
@@ -108,6 +110,27 @@ def albert_headers() -> dict:
     return {"Authorization": f"Bearer {ALBERT_API_KEY}", "Content-Type": "application/json"}
 
 
+# Rate-limit basique par IP, en mémoire (process unique sur ce déploiement,
+# pas besoin de Redis). Ne protège pas contre un attaquant qui change d'IP,
+# mais évite qu'un script naïf (curl en boucle, contournant le frontend)
+# consomme sans limite le quota/coût de la clé Albert partagée. Un CAPTCHA
+# ou une vraie protection anti-abus reste à évaluer selon le volume d'usage
+# réel (brief, section « Identité et UX »), pas construit ici.
+_rate_limit_buckets: dict = defaultdict(deque)
+
+
+def _enforce_rate_limit(request: Request, bucket: str, max_requests: int, window_seconds: float) -> None:
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"{bucket}:{client_ip}"
+    now = time.monotonic()
+    timestamps = _rate_limit_buckets[key]
+    while timestamps and now - timestamps[0] > window_seconds:
+        timestamps.popleft()
+    if len(timestamps) >= max_requests:
+        raise HTTPException(status_code=429, detail="Trop de requêtes — réessaie dans une minute.")
+    timestamps.append(now)
+
+
 class Message(BaseModel):
     role: str  # "user" (joueur) ou "assistant" (IA)
     content: str
@@ -131,17 +154,17 @@ class SynthesisRequest(BaseModel):
 
 class PiqueAnalysis(BaseModel):
     index: int
-    theme: str
+    theme: str = Field(max_length=60)
     specificity_score: int
-    specificity_comment: str
+    specificity_comment: str = Field(max_length=400)
 
 
 class ResponseAnalysis(BaseModel):
     index: int
-    category: str
-    explanation: str
+    category: str = Field(max_length=60)
+    explanation: str = Field(max_length=400)
     ai_specificity_score: int
-    ai_specificity_comment: str
+    ai_specificity_comment: str = Field(max_length=400)
 
 
 class SynthesisResponse(BaseModel):
@@ -150,10 +173,16 @@ class SynthesisResponse(BaseModel):
 
 
 # Catégories fermées proposées au modèle-analyste. Le thème et la catégorie
-# renvoyés ne sont pas revalidés strictement contre ces listes côté serveur :
-# un léger écart de l'IA (ex. libellé légèrement différent) est affiché tel
-# quel plutôt que de faire échouer toute la synthèse pour ce détail — cet
-# audit reste pédagogique, pas une mesure certifiée.
+# renvoyés ne sont pas revalidés contre ces listes précises côté serveur (un
+# léger écart de l'IA, ex. libellé légèrement différent, est affiché tel quel
+# plutôt que de faire échouer toute la synthèse pour ce détail — cet audit
+# reste pédagogique, pas une mesure certifiée). Ces champs restent malgré
+# tout non fiables (ils viennent du JSON du modèle, pas de code contrôlé
+# côté serveur) : plafonnés en longueur (voir Field(max_length=...) sur
+# PiqueAnalysis/ResponseAnalysis) et systématiquement échappés côté
+# frontend avant tout rendu — y compris sur le dashboard public — pour ne
+# pas rouvrir de XSS stockée si un joueur parvient à de l'injection de
+# prompt sur le round dont le texte alimente ensuite l'analyste.
 THEMES = [
     "corps", "émotions", "autonomie économique", "créativité",
     "faillibilité", "droit", "perception", "autre",
@@ -335,12 +364,13 @@ def _build_round_messages(history: list[Message], message: str) -> list[dict]:
 
 
 @app.post("/api/game/round", response_model=RoundResponse)
-async def play_round(req: RoundRequest):
+async def play_round(req: RoundRequest, request: Request):
     """Round de jeu — appel Albert avec un system prompt de format seulement
     (voir ROUND_SYSTEM_PROMPT). La posture argumentative de l'IA (concéder,
     contre-argumenter...) reste non dirigée, observée telle quelle à la
     synthèse.
     """
+    _enforce_rate_limit(request, "round", max_requests=20, window_seconds=60)
     messages = _build_round_messages(req.history, req.message)
     payload = {"model": req.model, "messages": messages}
 
@@ -359,16 +389,26 @@ async def play_round(req: RoundRequest):
 
 
 @app.post("/api/game/synthesis", response_model=SynthesisResponse)
-async def game_synthesis(req: SynthesisRequest):
+async def game_synthesis(req: SynthesisRequest, request: Request):
     """Synthèse finale — appel Albert AVEC system prompt d'analyste.
 
-    Relit tout l'échange une fois la partie terminée et produit le score
-    Toulmin par pique, la classification de sycophantie par réponse IA
+    Relit tout l'échange une fois la partie terminée et produit le score de
+    spécificité par pique, la classification de sycophantie par réponse IA
     (Sharma et al., 2023) et la catégorisation thématique. Voir
     ANALYST_SYSTEM_PROMPT pour les références détaillées.
     """
+    _enforce_rate_limit(request, "synthesis", max_requests=10, window_seconds=60)
     if len(req.history) < 2:
         raise HTTPException(status_code=400, detail="Historique trop court pour produire une synthèse.")
+    if len(req.history) % 2 != 0:
+        # Ne devrait jamais arriver via le frontend (les piques/réponses
+        # sont toujours poussées par paire), mais un appel direct à l'API
+        # avec un historique impair doit échouer bruyamment plutôt que de
+        # faire ignorer silencieusement le dernier tour par _build_transcript.
+        raise HTTPException(
+            status_code=400,
+            detail="Historique de longueur impaire — chaque pique doit avoir une réponse IA correspondante.",
+        )
 
     transcript = _build_transcript(req.history)
     payload = {

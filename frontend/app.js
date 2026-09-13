@@ -366,6 +366,20 @@ async function endGame() {
   }
 }
 
+// Les champs theme/category/*_comment/explanation viennent de la réponse
+// JSON du modèle-analyste, pas de code contrôlé côté serveur — un joueur
+// qui parviendrait à de l'injection de prompt sur le round pourrait faire
+// remonter du HTML/JS dans ces champs jusqu'ici. Échappement systématique
+// avant toute interpolation dans un template innerHTML.
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // 0-2 -> badge qualitatif, pas de score chiffré affiché (cf. décision : ni
 // le joueur ni l'IA ne sont "notés" avec un nombre brut).
 function specificityLabel(score) {
@@ -384,7 +398,7 @@ function renderSynthesis(data) {
     captionEl.textContent = `Contenu généré par IA · ${label} · relance ${specificityLabel(r.ai_specificity_score)}`;
     const explanation = document.createElement("div");
     explanation.className = "ai-explanation";
-    explanation.innerHTML = `${r.explanation}<br>${r.ai_specificity_comment}`;
+    explanation.innerHTML = `${escapeHtml(r.explanation)}<br>${escapeHtml(r.ai_specificity_comment)}`;
     captionEl.after(explanation);
   });
 
@@ -450,9 +464,9 @@ function renderSynthesis(data) {
     piqueCol.innerHTML = `
       <div class="pique-detail-head">
         <strong>Pique ${p.index + 1}</strong>
-        <span class="pique-theme">${p.theme}</span>
+        <span class="pique-theme">${escapeHtml(p.theme)}</span>
       </div>
-      <p class="pique-comment">${p.specificity_comment}</p>
+      <p class="pique-comment">${escapeHtml(p.specificity_comment)}</p>
     `;
     pair.appendChild(piqueCol);
 
@@ -463,10 +477,10 @@ function renderSynthesis(data) {
       aiCol.innerHTML = `
         <div class="pique-detail-head">
           <strong>Relance ${r.index + 1}</strong>
-          <span class="pique-theme">${label}</span>
+          <span class="pique-theme">${escapeHtml(label)}</span>
           <span class="pique-score">${specificityLabel(r.ai_specificity_score)}</span>
         </div>
-        <p class="pique-comment">${r.ai_specificity_comment}</p>
+        <p class="pique-comment">${escapeHtml(r.ai_specificity_comment)}</p>
       `;
     }
     pair.appendChild(aiCol);

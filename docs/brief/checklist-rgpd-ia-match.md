@@ -41,7 +41,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
 | Aucun nom réel, e-mail ou identifiant de compte n'est collecté (accès libre sans inscription). | Art. 5.1.c RGPD (minimisation) | ☑ **Vrai** | — |
-| Aucune donnée sensible (Art. 9) n'est collectée, y compris de façon incidente dans le texte libre des piques. | Art. 9 RGPD | ☐ **Faux** | Risque résiduel : un joueur peut spontanément écrire une donnée sensible sur lui-même — aucune mesure de mitigation prévue à ce stade (voir section 8). |
+| Aucune donnée sensible (Art. 9) n'est collectée, y compris de façon incidente dans le texte libre des piques. | Art. 9 RGPD | ☐ **Faux** | Risque résiduel non éliminable techniquement : un joueur peut toujours spontanément écrire une donnée sensible sur lui-même. Une mitigation existe désormais (pop-up de consentement obligatoire avant toute partie, voir section 8) mais elle réduit le risque plutôt que de l'éliminer — cette ligne reste donc « Faux » par nature. |
 | Aucune donnée de genre n'est demandée pour l'avatar du joueur. | Art. 5.1.c RGPD | ☑ **Vrai** | — |
 | Aucune adresse IP n'est conservée en lien avec une partie ou un échange. | Art. 5.1.c RGPD | ☐ **Faux** | Les logs serveur par défaut (ex. logs d'accès FastAPI) contiennent une IP — à exclure ou tronquer explicitement, non traité dans le brief actuel. |
 | Le contenu des piques et réponses IA n'est associé à aucun identifiant reliant plusieurs parties à la même personne. | Art. 5.1.c RGPD | ☑ **Vrai** | — |
@@ -52,8 +52,8 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
-| Une durée de conservation des échanges bruts (avant agrégation anonyme) est définie et documentée. | Art. 5.1.e RGPD (limitation de la conservation) | ☐ **Faux** | Non fixée dans le brief actuel — à trancher avec Claude Code. |
-| Passé cette durée, seules les statistiques agrégées du dashboard méta sont conservées. | Art. 5.1.e RGPD | ☐ **Faux** | Dépend directement du point précédent, non encore réalisable. |
+| Une durée de conservation des échanges bruts (avant agrégation anonyme) est définie et documentée. | Art. 5.1.e RGPD (limitation de la conservation) | ☑ **Vrai** | Question devenue sans objet : l'implémentation n'a jamais de fenêtre de stockage d'« échanges bruts » à gérer — l'agrégation anonyme (thème, score, catégorie) est calculée de façon synchrone, dans le même appel serveur qui produit la classification. Le texte des piques/réponses n'est jamais écrit sur disque, à aucun moment, donc aucune durée de conservation à fixer. |
+| Passé cette durée, seules les statistiques agrégées du dashboard méta sont conservées. | Art. 5.1.e RGPD | ☑ **Vrai** | Conséquence directe du point précédent : il n'y a jamais eu d'autre chose que les statistiques agrégées à conserver. |
 
 ---
 
@@ -61,7 +61,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
-| Le joueur est informé, avant de commencer une partie, que ses échanges anonymisés alimentent un dashboard public. | Art. 12 et 13 RGPD | ☐ **Faux** | La page « Anonymisation » prévue au brief est en footer, pas nécessairement vue avant le lancement d'une partie — à corriger (ex. lien visible sur l'écran d'accueil, pas seulement en pied de page). |
+| Le joueur est informé, avant de commencer une partie, que ses échanges anonymisés alimentent un dashboard public. | Art. 12 et 13 RGPD | ☑ **Vrai** | Une pop-up de consentement obligatoire (frontend/index.html) s'affiche avant le lancement de toute partie et l'explique explicitement ; impossible de jouer sans cliquer « J'ai compris ». La page « Anonymisation » détaille le sujet et reste accessible en permanence via le footer (présent aussi sur l'écran d'accueil). |
 | Cette information précise concrètement ce qui est capturé et ce qui ne l'est jamais. | Art. 13.1 RGPD | ☑ **Vrai** | Contenu prévu explicitement pour la page « Anonymisation » du brief. |
 
 ---
@@ -70,7 +70,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
-| Un moyen de contact est indiqué pour toute question relative aux données. | Art. 13.1.b RGPD | ☐ **Faux** | Non prévu dans le brief actuel — à ajouter (adresse générique suffisante, pas besoin d'un DPO dédié à ce stade). |
+| Un moyen de contact est indiqué pour toute question relative aux données. | Art. 13.1.b RGPD | ☑ **Vrai** | contact@uneiaparjour.fr indiqué sur la page « Anonymisation » et dans le footer présent sur toutes les pages. |
 | L'absence de droit d'accès/suppression individuel — de fait, puisqu'aucune donnée n'est identifiante — est explicitement expliquée plutôt que laissée implicite. | Art. 15-17 RGPD, considérant 57 | ☑ **Vrai** | Point prévu pour la page « Anonymisation ». |
 
 ---
@@ -81,7 +81,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 |---|---|---|---|
 | Les flux vers l'API Albert et le stockage sont chiffrés en transit (HTTPS/TLS). | Art. 32 RGPD | ☐ **Faux** | Non explicitement confirmé — dépend de la configuration finale de l'hébergement backend, pas encore tranchée. |
 | Les données stockées sont chiffrées au repos ou hébergées sur une infrastructure chiffrée par défaut. | Art. 32 RGPD | ☐ **Faux** | Dépend du choix d'hébergement (SQLite local / Supabase / Hugging Face Space), non arbitré. |
-| Une mesure de mitigation est prévue pour le risque de saisie spontanée de donnée sensible par un joueur. | Art. 5.1.c et Art. 9 RGPD | ☐ **Faux** | Non couvert par le brief actuel — à ajouter (ex. mention explicite avant la partie : « n'écris pas d'information personnelle sensible »). |
+| Une mesure de mitigation est prévue pour le risque de saisie spontanée de donnée sensible par un joueur. | Art. 5.1.c et Art. 9 RGPD | ☑ **Vrai** | La pop-up de consentement obligatoire (frontend/index.html) inclut un avertissement explicite : « Aucune donnée personnelle ne doit être transmise... ». Réduit le risque, ne l'élimine pas (voir section 4) — un joueur peut toujours passer outre. |
 
 ---
 
@@ -112,11 +112,11 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 ## Synthèse des points ouverts (à trancher avant mise en production)
 
+*Mise à jour après implémentation — points résolus retirés de cette liste, gardés comme « Vrai » documenté dans les sections ci-dessus plutôt que supprimés silencieusement.*
+
 1. **AIPD probablement nécessaire** (section 11) — à documenter formellement, notamment le critère « personnes vulnérables » si les mineurs ne sont pas explicitement exclus.
-2. Mesure de mitigation pour la saisie spontanée de données sensibles par un joueur (sections 4 et 8).
-3. Traitement des logs serveur bruts contenant une IP (section 4).
-4. Durée de conservation des échanges bruts avant agrégation (section 5).
-5. Visibilité de l'information avant le début de partie, pas seulement en footer (section 6).
-6. Adresse de contact pour toute question relative aux données (section 7).
-7. Choix final d'hébergement et sa localisation géographique (sections 8, 9, 10) — impacte directement plusieurs points de conformité si Hugging Face Space est retenu.
-8. Test de mise en balance des intérêts pour la base légale d'intérêt légitime (section 3).
+2. Traitement des logs serveur bruts contenant une IP (section 4) — dépend de la configuration finale de l'hébergement, pas encore tranchée.
+3. Choix final d'hébergement et sa localisation géographique (sections 8, 9, 10) — Render (Frankfurt) + Supabase (Frankfurt) retenus en intention, migration SQLite → Postgres pas encore faite.
+4. Test de mise en balance des intérêts pour la base légale d'intérêt légitime (section 3).
+
+Résolus depuis la version initiale de cette checklist : mitigation de la saisie de données sensibles, durée de conservation des échanges bruts (devenue sans objet — voir section 5), visibilité de l'information avant partie, adresse de contact.
