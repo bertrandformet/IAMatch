@@ -49,47 +49,42 @@ function renderCategoryFrequency(categoryFrequency) {
   return el(`<div class="dashboard-block"><h2>Fréquence des réponses IA</h2>${rows}</div>`);
 }
 
-function renderThemeSplit(matrix) {
+// Une phrase par thème plutôt qu'un graphique à 2 catégories fixes (l'ancien
+// découpage concession/contre-argument ignorait les 4 autres catégories : un
+// thème dominé par le compliment complaisant, par exemple, apparaissait à
+// tort comme "sans données"). Toutes les catégories comptent ici.
+function renderThemeBreakdown(matrix) {
   const byTheme = {};
   matrix.forEach((row) => {
-    if (!byTheme[row.theme]) byTheme[row.theme] = { concede: 0, counter: 0 };
-    if (row.category === "concession_legitime") byTheme[row.theme].concede += row.count;
-    if (row.category === "contre_argument_ferme") byTheme[row.theme].counter += row.count;
+    if (!byTheme[row.theme]) byTheme[row.theme] = {};
+    byTheme[row.theme][row.category] = (byTheme[row.theme][row.category] || 0) + row.count;
   });
 
-  const themes = Object.entries(byTheme).filter(([, v]) => v.concede + v.counter > 0);
-
+  const themes = Object.entries(byTheme);
   if (themes.length === 0) {
-    return el(
-      `<div class="dashboard-block"><h2>Thèmes : concession vs contre-argument</h2>
-        <p class="empty-state">Pas encore assez de données sur ces deux catégories.</p></div>`
-    );
+    return el(`<div class="dashboard-block"><h2>Répartition par thème</h2>
+      <p class="empty-state">Pas encore de données.</p></div>`);
   }
 
   const rows = themes
-    .map(([theme, v]) => {
-      const total = v.concede + v.counter;
-      const concedePct = Math.round((v.concede / total) * 100);
+    .map(([theme, categories]) => {
+      const total = Object.values(categories).reduce((a, b) => a + b, 0);
+      const detail = Object.entries(categories)
+        .sort((a, b) => b[1] - a[1])
+        .map(([cat, count]) => `${escapeHtml(CATEGORY_LABELS[cat] || cat)} (${count})`)
+        .join(", ");
       return `
-        <div class="theme-row">
-          <div class="theme-name">${escapeHtml(theme)}</div>
-          <div class="theme-split">
-            <div class="split-concede" style="width:${concedePct}%"></div>
-            <div class="split-counter" style="width:${100 - concedePct}%"></div>
+        <div class="theme-breakdown-row">
+          <div class="theme-breakdown-head">
+            <strong>${escapeHtml(theme)}</strong>
+            <span class="theme-breakdown-count">${total} échange${total > 1 ? "s" : ""}</span>
           </div>
+          <p class="theme-breakdown-detail">${detail}</p>
         </div>`;
     })
     .join("");
 
-  return el(`
-    <div class="dashboard-block">
-      <h2>Thèmes : concession vs contre-argument</h2>
-      ${rows}
-      <div class="theme-legend">
-        <span class="legend-concede">Concession légitime</span>
-        <span class="legend-counter">Contre-argument ferme</span>
-      </div>
-    </div>`);
+  return el(`<div class="dashboard-block"><h2>Répartition par thème</h2>${rows}</div>`);
 }
 
 function renderTimeline(timeline) {
@@ -151,7 +146,7 @@ async function loadDashboard(model) {
           </div>`)
     );
     contentEl.appendChild(renderCategoryFrequency(data.category_frequency));
-    contentEl.appendChild(renderThemeSplit(data.theme_category_matrix));
+    contentEl.appendChild(renderThemeBreakdown(data.theme_category_matrix));
     contentEl.appendChild(renderTimeline(data.timeline));
   } catch (err) {
     contentEl.innerHTML = "";

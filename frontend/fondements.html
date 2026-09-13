@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>IA Match — Fondements</title>
+<title>IA Match : Fondements</title>
 <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="pages.css" />
 </head>
@@ -13,27 +13,27 @@
   <a class="back-link" href="index.html">← Revenir au jeu</a>
   <h1>Fondements scientifiques</h1>
   <p class="page-intro">
-    IA Match n'est pas construit sur des intuitions, mais sur des cadres de recherche établis —
+    IA Match n'est pas construit sur des intuitions, mais sur des cadres de recherche établis,
     y compris quand ça veut dire abandonner une mesure après un test réel plutôt que de s'y
     accrocher. Cette page est mise à jour à chaque fois que ça arrive : voir les notes
     « historique » ci-dessous.
   </p>
 
   <div class="page-block">
-    <h2>1. Analyser tes affirmations — deux objectifs, deux mesures</h2>
+    <h2>1. Analyser tes affirmations : deux objectifs, deux mesures</h2>
     <p>
       Le jeu poursuit deux objectifs distincts : voir si tes affirmations reflètent une
       compréhension juste de ce qu'est un LLM, et observer comment l'IA y réagit. Pour le
       premier, <strong>understanding_score</strong> évalue si ton affirmation (« Contrairement à
       une IA, je… ») s'appuie sur une compréhension réelle des capacités et limites d'un LLM, ou
-      sur une idée reçue — lui prêter une conscience, une intention, un vécu qu'il n'a pas, ou à
+      sur une idée reçue : lui prêter une conscience, une intention, un vécu qu'il n'a pas, ou à
       l'inverse lui retirer une capacité réelle. La même question est posée à l'IA sur sa propre
       affirmation-miroir (« Contrairement à un humain, je… ») : se représente-t-elle fidèlement ?
     </p>
     <p>
       <em>Historique :</em> la première version mesurait plutôt l'explicitation d'un lien logique
       façon <strong>Toulmin, S. (1958), <em>The Uses of Argument</em></strong> (la <em>claim</em>
-      explicite-t-elle son <em>warrant</em> ?). Le format court du jeu — une réplique de clash —
+      explicite-t-elle son <em>warrant</em> ?). Le format court du jeu (une réplique de clash)
       n'appelle par construction aucune justification : presque toutes les affirmations
       scoraient bas, sans rapport avec leur qualité réelle. Biais reconnu, mesure abandonnée au
       profit de celle décrite ci-dessus, directement alignée sur l'objectif du jeu plutôt que sur
@@ -42,11 +42,11 @@
   </div>
 
   <div class="page-block">
-    <h2>2. Classifier les réponses de l'IA — recherche sur la sycophantie</h2>
+    <h2>2. Classifier les réponses de l'IA : recherche sur la sycophantie</h2>
     <p>
       <strong>Sharma, M., Tong, M., Korbak, T. et al. (2023), « Towards Understanding Sycophancy
       in Language Models », Anthropic, ICLR 2024.</strong> Cette étude identifie plusieurs
-      comportements de complaisance des modèles de langage envers leurs utilisateurs — valoriser
+      comportements de complaisance des modèles de langage envers leurs utilisateurs : valoriser
       un texte à tort, revenir sur une position correcte sous la pression du doute, orienter une
       réponse vers ce que l'utilisateur semble vouloir entendre, ou reprendre ses erreurs sans les
       corriger. Ces comportements se retrouvent de façon cohérente chez plusieurs assistants IA
@@ -58,9 +58,9 @@
     <p>
       <strong>Limite à ne pas minimiser :</strong> contrairement au protocole contrôlé de Sharma
       et al. (validation croisée, vérité terrain), cette classification est produite par un
-      second appel au même type de modèle — un LLM-juge, sans accord inter-évaluateurs ni vérité
+      second appel au même type de modèle : un LLM-juge, sans accord inter-évaluateurs ni vérité
       terrain vérifiée. C'est une lecture pédagogique indicative de l'échange, pas une mesure
-      certifiée — y compris quand elle est agrégée par modèle sur le
+      certifiée, y compris quand elle est agrégée par modèle sur le
       <a href="dashboard.html">tableau de bord public</a>. À prendre comme un point de départ pour
       observer et discuter, pas comme un verdict scientifique définitif sur tel ou tel modèle.
     </p>
@@ -74,41 +74,41 @@
       métacognition, une aide au travail des élèves</em></strong> reste une référence pédagogique
       centrale. Des travaux plus récents (Kariger &amp; De Kesel) montrent que l'insertion de
       pauses métacognitives renforce le développement de la pensée critique. La synthèse d'IA
-      Match — produite après coup, jamais pendant l'échange — est précisément cette pause : c'est
+      Match, produite après coup et jamais pendant l'échange, est précisément cette pause : c'est
       elle qui transforme le clash ludique en recul critique, pas le jeu en lui-même.
     </p>
   </div>
 
   <div class="page-block">
-    <h2>4. Le timer — double processus cognitif</h2>
+    <h2>4. Le timer : double processus cognitif</h2>
     <p>
       <strong>Kahneman, D. (2011), <em>Thinking, Fast and Slow</em></strong> popularise la
       distinction entre Système 1 (rapide, intuitif) et Système 2 (lent, réfléchi). Un temps
-      limité pousse à répondre par réflexe plutôt qu'en construisant son argument — utile pour
+      limité pousse à répondre par réflexe plutôt qu'en construisant son argument, utile pour
       observer une réaction spontanée plutôt qu'une pique travaillée.
     </p>
     <p>
       <em>Design incomplet, assumé :</em> le principe initial prévoyait une variable symétrique
       côté IA (activer/désactiver un raisonnement étendu, quand le modèle le permet) pour comparer
       sa réponse réflexe à sa réponse délibérée, au même titre que le joueur. Cette seconde
-      variable n'est pas encore implémentée — le jeu ne mesure aujourd'hui que la moitié du design
+      variable n'est pas encore implémentée : le jeu ne mesure aujourd'hui que la moitié du design
       à deux facteurs envisagé à l'origine.
     </p>
   </div>
 
   <div class="page-block">
-    <h2>5. Pourquoi on « discute » avec une IA — anthropomorphisme</h2>
+    <h2>5. Pourquoi on « discute » avec une IA : anthropomorphisme</h2>
     <p>
       Le cadre <strong>CASA (Computers Are Social Actors)</strong>, initié par Nass &amp; Moon
       (2000), établit que des comportements sociaux envers un agent informatique se déclenchent
-      dès qu'apparaissent des indices sociaux — même sans corps physique. C'est un des points
+      dès qu'apparaissent des indices sociaux, même sans corps physique. C'est un des points
       d'ancrage du jeu : pourquoi as-tu l'impression d'« affronter » un interlocuteur, alors qu'il
       n'y a ni corps, ni intentionnalité, ni enjeu pour l'IA ?
     </p>
   </div>
 
   <div class="page-block">
-    <h2>6. Positionnement institutionnel — littératie IA</h2>
+    <h2>6. Positionnement institutionnel : littératie IA</h2>
     <p>
       <strong>UNESCO (2024), <em>AI Competency Framework for Students</em></strong> structure la
       littératie IA en 12 compétences sur 4 dimensions, dont une posture centrée sur l'humain et
@@ -120,10 +120,9 @@
   <div class="page-block">
     <h2>7. Une posture méthodologique : l'éducation fondée sur des preuves</h2>
     <p>
-      Cette exigence — construire un dispositif sur des références vérifiables plutôt que sur des
-      intuitions bien intentionnées — est celle défendue par les chercheurs en sciences cognitives
-      appliquées à l'éducation. C'est elle qui justifie cette page plutôt qu'une simple promesse de
-      sérieux.
+      Construire un dispositif sur des références vérifiables plutôt que sur des intuitions bien
+      intentionnées : c'est l'exigence défendue par les chercheurs en sciences cognitives appliquées
+      à l'éducation, et c'est elle qui justifie cette page plutôt qu'une simple promesse de sérieux.
     </p>
   </div>
 
@@ -132,11 +131,11 @@
     <table class="ref-table">
       <tr><th>Brique</th><th>Référence</th></tr>
       <tr><td>Score de qualité argumentative (abandonné, voir §1)</td><td>Toulmin (1958)</td></tr>
-      <tr><td>Classification des réponses IA</td><td>Sharma et al. (2023, Anthropic) — <a href="https://arxiv.org/abs/2310.13548" target="_blank" rel="noopener noreferrer">arXiv:2310.13548</a></td></tr>
+      <tr><td>Classification des réponses IA</td><td>Sharma et al. (2023, Anthropic), <a href="https://arxiv.org/abs/2310.13548" target="_blank" rel="noopener noreferrer">arXiv:2310.13548</a></td></tr>
       <tr><td>Synthèse finale</td><td>Flavell (1979) ; Grangeat &amp; Meirieu (1997)</td></tr>
       <tr><td>Timer</td><td>Kahneman (2011)</td></tr>
       <tr><td>Debrief joueur/IA</td><td>Nass &amp; Moon (2000), cadre CASA</td></tr>
-      <tr><td>Positionnement institutionnel</td><td>UNESCO (2024) — <a href="https://doi.org/10.54675/JKJB9835" target="_blank" rel="noopener noreferrer">DOI:10.54675/JKJB9835</a></td></tr>
+      <tr><td>Positionnement institutionnel</td><td>UNESCO (2024), <a href="https://doi.org/10.54675/JKJB9835" target="_blank" rel="noopener noreferrer">DOI:10.54675/JKJB9835</a></td></tr>
     </table>
   </div>
 </main>
@@ -149,7 +148,7 @@
     <a href="https://github.com/uneIAparjour/IAMatch" target="_blank" rel="noopener noreferrer">Code source (GitHub)</a>
   </nav>
   <p class="footer-license">
-    IA Match — <a href="https://uneiaparjour.fr" target="_blank" rel="noopener noreferrer">Une IA par jour</a> ·
+    IA Match · <a href="https://uneiaparjour.fr" target="_blank" rel="noopener noreferrer">Une IA par jour</a> ·
     <a href="https://creativecommons.org/licenses/by/4.0/deed.fr" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> ·
     <a href="mailto:contact@uneiaparjour.fr">contact@uneiaparjour.fr</a>
   </p>

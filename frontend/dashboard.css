@@ -60,40 +60,29 @@
 }
 .bar-row .bar-count { flex: 0 0 32px; text-align: right; color: var(--muted); }
 
-.theme-row {
-  margin-bottom: 14px;
+.theme-breakdown-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
 }
-.theme-row .theme-name {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.theme-row .theme-split {
+.theme-breakdown-row:first-of-type { border-top: none; }
+
+.theme-breakdown-head {
   display: flex;
-  height: 16px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--bg);
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
 }
-.theme-row .split-concede { background: #34c759; }
-.theme-row .split-counter { background: #ff9500; }
-.theme-legend {
-  display: flex;
-  gap: 16px;
+
+.theme-breakdown-count {
   font-size: 12px;
   color: var(--muted);
-  margin-top: 4px;
 }
-.theme-legend span::before {
-  content: "";
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  margin-right: 4px;
+
+.theme-breakdown-detail {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 4px 0 0;
 }
-.theme-legend .legend-concede::before { background: #34c759; }
-.theme-legend .legend-counter::before { background: #ff9500; }
 
 .empty-state {
   color: var(--muted);

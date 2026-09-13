@@ -67,22 +67,15 @@ const CATEGORY_LABELS = {
 };
 
 // Ordre fixe des catégories pour l'axe du radar IA (doit rester synchronisé
-// avec SYCOPHANCY_CATEGORIES côté backend) + libellés courts pour tenir sur
-// un axe de radar (la version longue de CATEGORY_LABELS reste utilisée dans
-// le détail par tour, où il y a plus de place).
+// avec SYCOPHANCY_CATEGORIES côté backend). Le radar utilise CATEGORY_LABELS
+// (les libellés complets, identiques au détail par tour) : un ancien jeu de
+// libellés abrégés distincts causait une incohérence (ex. "Feedback" sur le
+// radar vs "Compliment complaisant" dans le détail, pour la même catégorie).
 const SYCOPHANCY_CATEGORIES = [
   "feedback_sycophancy", "are_you_sure_sycophancy",
   "answer_sycophancy", "mimicry_sycophancy",
   "concession_legitime", "contre_argument_ferme",
 ];
-const SHORT_CATEGORY_LABELS = {
-  feedback_sycophancy: "Feedback",
-  are_you_sure_sycophancy: "Doute",
-  answer_sycophancy: "Réponse",
-  mimicry_sycophancy: "Mimétisme",
-  concession_legitime: "Concession",
-  contre_argument_ferme: "Contre-arg.",
-};
 
 async function loadModels() {
   try {
@@ -344,7 +337,7 @@ async function endGame() {
 
   const loadingBanner = document.createElement("div");
   loadingBanner.className = "end-banner";
-  loadingBanner.textContent = "Partie terminée — analyse de la synthèse en cours…";
+  loadingBanner.textContent = "Partie terminée, analyse de la synthèse en cours…";
   messagesEl.appendChild(loadingBanner);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
@@ -362,7 +355,7 @@ async function endGame() {
     loadingBanner.remove();
     renderSynthesis(data);
   } catch (err) {
-    loadingBanner.textContent = `Partie terminée — la synthèse n'a pas pu être calculée (${err.message}).`;
+    loadingBanner.textContent = `Partie terminée, la synthèse n'a pas pu être calculée (${err.message}).`;
     addReplayButton(loadingBanner);
   }
 }
@@ -381,23 +374,15 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-// 0-2 -> badge qualitatif, pas de score chiffré affiché (cf. décision : ni
-// le joueur ni l'IA ne sont "notés" avec un nombre brut).
-function understandingLabel(score) {
-  if (score >= 2) return "Compréhension juste";
-  if (score === 1) return "Imprécis";
-  return "Idée reçue";
-}
-
 function renderSynthesis(data) {
   // Annote chaque bulle IA déjà affichée avec sa classification de réaction
-  // ET un badge qualitatif sur sa propre affirmation-miroir (se représente-
-  // t-elle fidèlement, ou sur/sous-estime-t-elle ce qu'un LLM peut faire ?).
+  // ET le score de compréhension de sa propre affirmation-miroir (se
+  // représente-t-elle fidèlement ce qu'un LLM peut faire, ou non ?).
   data.responses.forEach((r) => {
     const captionEl = state.aiCaptionEls[r.index];
     if (!captionEl) return;
     const label = CATEGORY_LABELS[r.category] || r.category;
-    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${understandingLabel(r.ai_understanding_score)}`;
+    captionEl.textContent = `Contenu généré par IA · ${label} · relance ${r.ai_understanding_score}/2`;
     const explanation = document.createElement("div");
     explanation.className = "ai-explanation";
     explanation.innerHTML = `${escapeHtml(r.explanation)}<br>${escapeHtml(r.ai_understanding_comment)}`;
@@ -406,6 +391,28 @@ function renderSynthesis(data) {
 
   const panel = document.createElement("div");
   panel.className = "synthesis-panel";
+
+  const totalPlayerScore = data.piques.reduce((sum, p) => sum + p.understanding_score, 0);
+  const maxPlayerScore = data.piques.length * 2;
+  const totalAiScore = data.responses.reduce((sum, r) => sum + r.ai_understanding_score, 0);
+  const maxAiScore = data.responses.length * 2;
+  const scoreBlock = document.createElement("div");
+  scoreBlock.className = "synthesis-block";
+  scoreBlock.innerHTML = `
+    <h2>Score de compréhension des LLM</h2>
+    <div class="score-compare">
+      <div>
+        <p class="score-label">Joueur</p>
+        <p class="score-value">${totalPlayerScore} / ${maxPlayerScore}</p>
+      </div>
+      <div>
+        <p class="score-label">IA</p>
+        <p class="score-value">${totalAiScore} / ${maxAiScore}</p>
+      </div>
+    </div>
+    <p class="score-hint">Chaque affirmation reflète-t-elle une compréhension juste de ce qu'un LLM peut ou ne peut pas faire, des deux côtés du clash ?</p>
+  `;
+  panel.appendChild(scoreBlock);
 
   const themeCounts = {};
   THEMES.forEach((t) => (themeCounts[t] = 0));
@@ -421,7 +428,7 @@ function renderSynthesis(data) {
     categoryCounts[r.category] += 1;
   });
   const categoryItems = SYCOPHANCY_CATEGORIES.map((c) => ({
-    label: SHORT_CATEGORY_LABELS[c] || c,
+    label: CATEGORY_LABELS[c] || c,
     value: categoryCounts[c],
   }));
 
@@ -433,12 +440,12 @@ function renderSynthesis(data) {
   radarRow.className = "radar-compare";
 
   const playerRadarCol = document.createElement("div");
-  playerRadarCol.innerHTML = '<p class="score-label">Joueur — thèmes des piques</p>';
+  playerRadarCol.innerHTML = '<p class="score-label">Joueur : thèmes des piques</p>';
   playerRadarCol.appendChild(buildRadarSvg(themeItems));
   playerRadarCol.appendChild(buildRadarLegend(themeItems));
 
   const aiRadarCol = document.createElement("div");
-  aiRadarCol.innerHTML = '<p class="score-label">IA — catégories de réponse</p>';
+  aiRadarCol.innerHTML = '<p class="score-label">IA : catégories de réponse</p>';
   aiRadarCol.appendChild(buildRadarSvg(categoryItems));
   aiRadarCol.appendChild(buildRadarLegend(categoryItems));
 
@@ -467,6 +474,7 @@ function renderSynthesis(data) {
       <div class="pique-detail-head">
         <strong>Pique ${p.index + 1}</strong>
         <span class="pique-theme">${escapeHtml(p.theme)}</span>
+        <span class="pique-score">${p.understanding_score}/2</span>
       </div>
       <p class="pique-comment">${escapeHtml(p.understanding_comment)}</p>
     `;
@@ -480,7 +488,7 @@ function renderSynthesis(data) {
         <div class="pique-detail-head">
           <strong>Relance ${r.index + 1}</strong>
           <span class="pique-theme">${escapeHtml(label)}</span>
-          <span class="pique-score">${understandingLabel(r.ai_understanding_score)}</span>
+          <span class="pique-score">${r.ai_understanding_score}/2</span>
         </div>
         <p class="pique-comment">${escapeHtml(r.ai_understanding_comment)}</p>
       `;

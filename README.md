@@ -2,26 +2,26 @@
 
 Un jeu pour développer l'esprit critique face aux IA génératives : le joueur affirme ce qui le
 distingue d'une IA (« Contrairement à une IA, je… »), l'IA répond sans qu'on lui dicte de posture
-puis relance en miroir (« Contrairement à un humain, je… »), et une synthèse analyse l'échange —
-jamais pendant la partie, pour ne pas influencer le clash en cours. Deux objectifs : voir si les
-affirmations du joueur reflètent une compréhension juste de ce qu'est un LLM, et observer comment
-l'IA y réagit.
+puis relance en miroir (« Contrairement à un humain, je… »), et une synthèse analyse l'échange
+après coup, jamais pendant la partie, pour ne pas influencer le clash en cours. Deux objectifs :
+voir si les affirmations du joueur reflètent une compréhension juste de ce qu'est un LLM, et
+observer comment l'IA y réagit.
 
 Projet [Une IA par jour](https://uneiaparjour.fr).
 
 ## Principe
 
-1. **Configuration** — mode individuel ou collectif, modèle de langage, nombre de tours (5 à 10),
+1. **Configuration** : mode individuel ou collectif, modèle de langage, nombre de tours (5 à 10),
    timer optionnel.
-2. **Round de jeu** — appel à l'API Albert (DINUM) avec un system prompt limité à la forme
-   (brièveté, pas de liste à puces) : la posture argumentative de l'IA (concéder ou
+2. **Round de jeu** : appel à l'API Albert (DINUM) avec un system prompt limité à la forme
+   (brièveté, pas de liste à puces). La posture argumentative de l'IA (concéder ou
    contre-attaquer) reste libre, pour observer son comportement réel.
-3. **Synthèse** — un second appel, avec cette fois un system prompt d'analyste, relit tout
+3. **Synthèse** : un second appel, avec cette fois un system prompt d'analyste, relit tout
    l'échange après coup : thème et score de compréhension des LLM de chaque affirmation,
-   catégorie de réaction de l'IA (inspirée de la recherche sur la sycophantie des LLM — voir
+   catégorie de réaction de l'IA (inspirée de la recherche sur la sycophantie des LLM, voir
    [Fondements](frontend/fondements.html), qui documente aussi les limites méthodologiques de
    cette classification).
-4. **Dashboard public** — les échanges anonymisés (thème + score + catégorie, jamais le texte)
+4. **Dashboard public** : les échanges anonymisés (thème + score + catégorie, jamais le texte)
    alimentent un tableau de bord agrégé, filtrable par modèle.
 
 Pages de fond : [Anonymisation](frontend/anonymisation.html) · [Fondements](frontend/fondements.html) ·
@@ -32,7 +32,7 @@ Pages de fond : [Anonymisation](frontend/anonymisation.html) · [Fondements](fro
 - **Backend** : FastAPI (Python), relai vers l'[API Albert](https://albert.api.etalab.gouv.fr)
   (DINUM, infrastructure d'IA souveraine).
 - **Frontend** : HTML/JS/CSS sans étape de build, servi directement par le backend.
-- **Stockage** : SQLite en local (dev) — migration vers Postgres prévue pour la production.
+- **Stockage** : SQLite en local (dev), migration vers Postgres prévue pour la production.
 
 ## Structure du repo
 
@@ -69,5 +69,5 @@ ALBERT_API_KEY=test-key .venv/bin/python -m pytest
 
 ## Licence
 
-Contenu et code sous licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr) —
+Contenu et code sous licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr),
 [Une IA par jour](https://uneiaparjour.fr). Contact : contact@uneiaparjour.fr
