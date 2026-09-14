@@ -3,7 +3,7 @@
 Un jeu pour développer l'esprit critique face aux IA génératives : le joueur affirme ce qui le
 distingue d'une IA (« Contrairement à une IA, je… »), l'IA répond sans qu'on lui dicte de posture
 puis relance en miroir (« Contrairement à un humain, je… »), et une synthèse analyse l'échange
-après coup, jamais pendant la partie, pour ne pas influencer le clash en cours. Deux objectifs :
+après coup, jamais pendant la partie, pour ne pas influencer le match en cours. Deux objectifs :
 voir si les affirmations du joueur reflètent une compréhension juste de ce qu'est un LLM, et
 observer comment l'IA y réagit.
 

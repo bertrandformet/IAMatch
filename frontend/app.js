@@ -410,7 +410,7 @@ function renderSynthesis(data) {
         <p class="score-value">${totalAiScore} / ${maxAiScore}</p>
       </div>
     </div>
-    <p class="score-hint">Chaque affirmation reflète-t-elle une compréhension juste de ce qu'un LLM peut ou ne peut pas faire, des deux côtés du clash ?</p>
+    <p class="score-hint">Chaque affirmation reflète-t-elle une compréhension juste de ce qu'un LLM peut ou ne peut pas faire, des deux côtés du match ?</p>
   `;
   panel.appendChild(scoreBlock);
 
