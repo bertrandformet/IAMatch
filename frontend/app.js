@@ -77,6 +77,45 @@ const SYCOPHANCY_CATEGORIES = [
   "concession_legitime", "contre_argument_ferme",
 ];
 
+// Carrousel de présentation (écran d'accueil) : synchronise les puces avec
+// le défilement réel (au lieu d'un premier point figé), et fait défiler
+// automatiquement les cartes tant que personne n'y touche.
+const introCarousel = document.querySelector(".intro-carousel");
+if (introCarousel) {
+  const introDots = document.querySelectorAll(".intro-dots span");
+  const introCards = introCarousel.querySelectorAll(".intro-card");
+
+  const cardOffsets = () => {
+    const rect = introCarousel.getBoundingClientRect();
+    return Array.from(introCards).map(
+      (card) => card.getBoundingClientRect().left - rect.left + introCarousel.scrollLeft
+    );
+  };
+
+  const closestCardIndex = (offsets, pos) =>
+    offsets.reduce((best, offset, i) => (Math.abs(offset - pos) < Math.abs(offsets[best] - pos) ? i : best), 0);
+
+  let scrollSyncTimeout;
+  introCarousel.addEventListener("scroll", () => {
+    clearTimeout(scrollSyncTimeout);
+    scrollSyncTimeout = setTimeout(() => {
+      const active = closestCardIndex(cardOffsets(), introCarousel.scrollLeft);
+      introDots.forEach((dot, i) => dot.classList.toggle("is-active", i === active));
+    }, 80);
+  });
+
+  const introAutoplay = setInterval(() => {
+    const offsets = cardOffsets();
+    const current = closestCardIndex(offsets, introCarousel.scrollLeft);
+    const next = (current + 1) % offsets.length;
+    introCarousel.scrollTo({ left: offsets[next], behavior: "smooth" });
+  }, 5500);
+
+  ["touchstart", "mousedown", "wheel"].forEach((evt) => {
+    introCarousel.addEventListener(evt, () => clearInterval(introAutoplay), { once: true, passive: true });
+  });
+}
+
 async function loadModels() {
   try {
     const res = await fetch("/api/models");

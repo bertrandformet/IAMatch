@@ -82,6 +82,7 @@ body {
   display: flex;
   gap: 12px;
   overflow-x: auto;
+  overflow-anchor: none;
   scroll-snap-type: x mandatory;
   margin: 0 -32px 14px;
   padding: 0 32px 4px;
@@ -152,7 +153,7 @@ body {
   background: var(--border);
 }
 
-.intro-dots span:first-child { background: var(--ink); }
+.intro-dots span.is-active { background: var(--ink); }
 
 .setup-duration-hint {
   text-align: center;

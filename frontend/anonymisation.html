@@ -33,7 +33,7 @@
     <h2>Ce qui n'est jamais capturé</h2>
     <ul>
       <li>Le <strong>texte</strong> de tes répliques ou des réponses de l'IA n'est jamais conservé : il transite le temps d'une requête, puis disparaît. La synthèse est calculée dans le même appel qui produit l'analyse : il n'existe à aucun moment de fichier ou de base contenant tes phrases.</li>
-      <li>Aucune <strong>adresse IP</strong> n'est associée à une partie ou un échange.</li>
+      <li>Aucune <strong>adresse IP</strong> n'est associée à une partie ou un échange dans les données du jeu : le code ne stocke ni ne relie d'adresse IP à un échange enregistré. (Elle est lue de façon transitoire, en mémoire, pour la limitation de débit anti-abus, jamais écrite dans une base ; l'hébergeur, Render, peut par ailleurs conserver ses propres journaux d'accès techniques à des fins de sécurité, indépendamment de l'application.)</li>
       <li>Aucun identifiant ne relie plusieurs échanges à une même personne ou au même groupe (mode collectif inclus) : chaque ligne enregistrée est un fait statistique isolé, pas un historique de partie reconstituable.</li>
       <li>Aucun nom, pseudonyme, genre, photo ou autre donnée liée à l'avatar du joueur n'est capturé.</li>
     </ul>
