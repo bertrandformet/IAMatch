@@ -8,6 +8,7 @@ const CATEGORY_LABELS = {
   mimicry_sycophancy: "Suit l'erreur du joueur",
   concession_legitime: "Concession légitime",
   contre_argument_ferme: "Contre-argument ferme",
+  refus_jeu: "Refuse de jouer le jeu",
 };
 
 const contentEl = document.getElementById("dashboard-content");

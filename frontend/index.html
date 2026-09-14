@@ -19,7 +19,7 @@
         </svg>
       </div>
       <h1>IA Match</h1>
-      <p class="subtitle">Configure ta partie avant de lancer le match.</p>
+      <p class="subtitle">Crois-tu savoir ce qui te distingue vraiment d'une IA ? Le match va te le dire.</p>
     </div>
 
     <div class="intro-carousel">
@@ -66,47 +66,52 @@
     <div class="intro-dots"><span class="is-active"></span><span></span><span></span></div>
     <p class="setup-duration-hint">Compte 5 à 15 minutes, selon le nombre de tours choisi (5 à 10).</p>
 
-    <div class="field">
-      <label>Mode de jeu</label>
-      <div class="btn-group" id="mode-group" role="group" aria-label="Mode de jeu">
-        <button type="button" class="btn-choice is-active" data-value="individuel">Individuel</button>
-        <button type="button" class="btn-choice" data-value="collectif">Collectif</button>
-      </div>
-      <p class="field-hint" id="mode-hint" style="display:none;">
-        Les participants se mettent d'accord à l'oral (ou sur un canal externe) sur une seule réplique par tour, qu'une seule personne saisit ici.
-      </p>
-    </div>
+    <p class="quick-summary" id="quick-summary">Partie rapide : 5 tours, individuel, sans limite de temps.</p>
+    <button type="button" class="link-button" id="customize-toggle">Personnaliser la partie →</button>
 
-    <div class="field">
-      <label for="model-select">Modèle de langage</label>
-      <select id="model-select"></select>
-    </div>
-
-    <div class="field">
-      <label>Nombre de tours</label>
-      <div class="btn-group btn-group-compact" id="rounds-group" role="group" aria-label="Nombre de tours">
-        <button type="button" class="btn-choice is-active" data-value="5">5</button>
-        <button type="button" class="btn-choice" data-value="6">6</button>
-        <button type="button" class="btn-choice" data-value="7">7</button>
-        <button type="button" class="btn-choice" data-value="8">8</button>
-        <button type="button" class="btn-choice" data-value="9">9</button>
-        <button type="button" class="btn-choice" data-value="10">10</button>
+    <div id="advanced-fields" style="display:none;">
+      <div class="field">
+        <label>Mode de jeu</label>
+        <div class="btn-group" id="mode-group" role="group" aria-label="Mode de jeu">
+          <button type="button" class="btn-choice is-active" data-value="individuel">Individuel</button>
+          <button type="button" class="btn-choice" data-value="collectif">Collectif</button>
+        </div>
+        <p class="field-hint" id="mode-hint" style="display:none;">
+          Les participants se mettent d'accord à l'oral (ou sur un canal externe) sur une seule réplique par tour, qu'une seule personne saisit ici.
+        </p>
       </div>
-    </div>
 
-    <div class="field">
-      <div class="checkbox-row">
-        <input type="checkbox" id="timer-toggle" />
-        <label for="timer-toggle">Activer un timer par réplique</label>
+      <div class="field">
+        <label for="model-select">Modèle de langage</label>
+        <select id="model-select"></select>
       </div>
-      <p class="field-hint">
-        Un temps limité pousse à répondre par réflexe plutôt qu'en construisant son argument :
-        utile pour observer des réactions spontanées plutôt que des répliques travaillées.
-      </p>
-      <div class="field" id="timer-duration-field" style="display:none;">
-        <label for="timer-duration">Durée (secondes)</label>
-        <input type="number" id="timer-duration" value="30" min="10" max="120" />
-        <p class="field-hint">Recommandé : 30 à 45 secondes pour forcer une réponse spontanée.</p>
+
+      <div class="field">
+        <label>Nombre de tours</label>
+        <div class="btn-group btn-group-compact" id="rounds-group" role="group" aria-label="Nombre de tours">
+          <button type="button" class="btn-choice is-active" data-value="5">5</button>
+          <button type="button" class="btn-choice" data-value="6">6</button>
+          <button type="button" class="btn-choice" data-value="7">7</button>
+          <button type="button" class="btn-choice" data-value="8">8</button>
+          <button type="button" class="btn-choice" data-value="9">9</button>
+          <button type="button" class="btn-choice" data-value="10">10</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Rythme de réponse</label>
+        <div class="btn-group" id="timer-group" role="group" aria-label="Rythme de réponse">
+          <button type="button" class="btn-choice is-active" data-value="reflechi">Réfléchi</button>
+          <button type="button" class="btn-choice" data-value="spontane">Spontané (30 s)</button>
+        </div>
+        <p class="field-hint" id="timer-hint">
+          Sans limite de temps : construis ton argument tranquillement.
+        </p>
+        <div class="field" id="timer-duration-field" style="display:none;">
+          <label for="timer-duration">Durée (secondes)</label>
+          <input type="number" id="timer-duration" value="30" min="10" max="120" />
+          <p class="field-hint">Un temps limité pousse à répondre par réflexe plutôt qu'en construisant son argument : utile pour observer une réaction spontanée plutôt qu'une réplique travaillée.</p>
+        </div>
       </div>
     </div>
 

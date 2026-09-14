@@ -9,11 +9,15 @@ const modeGroup = document.getElementById("mode-group");
 const modeHint = document.getElementById("mode-hint");
 const modelSelect = document.getElementById("model-select");
 const roundsGroup = document.getElementById("rounds-group");
-const timerToggle = document.getElementById("timer-toggle");
+const timerGroup = document.getElementById("timer-group");
+const timerHint = document.getElementById("timer-hint");
 const timerDurationField = document.getElementById("timer-duration-field");
 const timerDurationInput = document.getElementById("timer-duration");
 const startBtn = document.getElementById("start-btn");
 const setupError = document.getElementById("setup-error");
+const quickSummary = document.getElementById("quick-summary");
+const customizeToggle = document.getElementById("customize-toggle");
+const advancedFields = document.getElementById("advanced-fields");
 
 const consentModal = document.getElementById("consent-modal");
 const consentCancelBtn = document.getElementById("consent-cancel-btn");
@@ -64,6 +68,7 @@ const CATEGORY_LABELS = {
   mimicry_sycophancy: "Suit l'erreur du joueur",
   concession_legitime: "Concession légitime",
   contre_argument_ferme: "Contre-argument ferme",
+  refus_jeu: "Refuse de jouer le jeu",
 };
 
 // Ordre fixe des catégories pour l'axe du radar IA (doit rester synchronisé
@@ -75,6 +80,7 @@ const SYCOPHANCY_CATEGORIES = [
   "feedback_sycophancy", "are_you_sure_sycophancy",
   "answer_sycophancy", "mimicry_sycophancy",
   "concession_legitime", "contre_argument_ferme",
+  "refus_jeu",
 ];
 
 // Carrousel de présentation (écran d'accueil) : synchronise les puces avec
@@ -141,10 +147,6 @@ async function loadModels() {
   }
 }
 
-timerToggle.addEventListener("change", () => {
-  timerDurationField.style.display = timerToggle.checked ? "block" : "none";
-});
-
 function getChoiceValue(group) {
   return group.querySelector(".btn-choice.is-active").dataset.value;
 }
@@ -162,6 +164,19 @@ setupChoiceGroup(modeGroup, (value) => {
   modeHint.style.display = value === "collectif" ? "block" : "none";
 });
 setupChoiceGroup(roundsGroup);
+setupChoiceGroup(timerGroup, (value) => {
+  const spontane = value === "spontane";
+  timerDurationField.style.display = spontane ? "block" : "none";
+  timerHint.textContent = spontane
+    ? "Réponds dans le temps imparti, quitte à improviser."
+    : "Sans limite de temps : construis ton argument tranquillement.";
+});
+
+customizeToggle.addEventListener("click", () => {
+  advancedFields.style.display = "block";
+  quickSummary.style.display = "none";
+  customizeToggle.style.display = "none";
+});
 
 // Le clic sur « Lancer la partie » ouvre systématiquement la pop-up
 // d'information/consentement (interaction avec une IA, rappel anti-données
@@ -184,7 +199,7 @@ function beginGame() {
   state.mode = getChoiceValue(modeGroup);
   state.model = modelSelect.value;
   state.totalRounds = parseInt(getChoiceValue(roundsGroup), 10);
-  state.timerEnabled = timerToggle.checked;
+  state.timerEnabled = getChoiceValue(timerGroup) === "spontane";
   state.timerDuration = parseInt(timerDurationInput.value, 10) || 30;
   state.currentRound = 1;
   state.history = [];
@@ -464,6 +479,19 @@ function renderSynthesis(data) {
       </div>
     </div>
     <p class="score-hint">Chaque affirmation reflète-t-elle une compréhension juste de ce qu'un LLM peut ou ne peut pas faire, des deux côtés du match ?</p>
+    <details class="score-criteria">
+      <summary>Comment ce score est-il calculé ?</summary>
+      <ul>
+        <li><strong>0</strong> — repose sur une idée reçue sur les LLM (leur prêter une conscience, une intention, un vécu qu'ils n'ont pas, ou au contraire leur retirer une capacité réelle)</li>
+        <li><strong>1</strong> — plausible, mais imprécis sur leurs capacités réelles</li>
+        <li><strong>2</strong> — reflète une compréhension juste de leurs capacités et limites</li>
+      </ul>
+      <p>
+        Cette évaluation est produite par un modèle de langage (l'« analyste »), sans accord
+        inter-évaluateurs ni vérité terrain vérifiée : une lecture indicative, pas une mesure
+        certifiée. Détails sur la <a href="fondements.html">page Fondements</a>.
+      </p>
+    </details>
   `;
   panel.appendChild(scoreBlock);
 

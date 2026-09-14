@@ -261,6 +261,27 @@ body {
 
 .dashboard-link a { color: var(--accent); text-decoration: none; }
 
+.quick-summary {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin: 0 0 8px;
+}
+
+.link-button {
+  display: block;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 20px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+#advanced-fields { margin-top: 4px; }
+
 /* --- Pop-up de consentement --- */
 .modal-overlay {
   position: fixed;
@@ -540,6 +561,31 @@ body {
   font-size: 12px;
   color: var(--muted);
   margin: 4px 0 0;
+}
+
+.score-criteria {
+  margin-top: 8px;
+  font-size: 12.5px;
+}
+
+.score-criteria summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.score-criteria ul {
+  margin: 8px 0;
+  padding-left: 18px;
+  color: var(--ink-2);
+}
+
+.score-criteria li { margin-bottom: 4px; }
+
+.score-criteria p {
+  color: var(--muted);
+  margin: 6px 0 0;
+  line-height: 1.4;
 }
 
 .detail-columns-head {
