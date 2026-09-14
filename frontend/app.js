@@ -487,9 +487,9 @@ function renderSynthesis(data) {
         <li><strong>2</strong> — reflète une compréhension juste de leurs capacités et limites</li>
       </ul>
       <p>
-        Cette évaluation est produite par un modèle de langage (l'« analyste »), sans accord
-        inter-évaluateurs ni vérité terrain vérifiée : une lecture indicative, pas une mesure
-        certifiée. Détails sur la <a href="fondements.html">page Fondements</a>.
+        Cette évaluation est produite par un modèle de langage (l'« analyste »), pas vérifiée par
+        des humains : une lecture indicative, pas une mesure certifiée. Détails sur la
+        <a href="fondements.html">page Fondements</a>.
       </p>
     </details>
   `;
