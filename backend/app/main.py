@@ -84,6 +84,14 @@ def record_exchanges(model: str, piques: list, responses: list) -> None:
 
 ALBERT_API_KEY = os.getenv("ALBERT_API_KEY", "")
 ALBERT_BASE_URL = os.getenv("ALBERT_BASE_URL", "https://albert.api.etalab.gouv.fr/v1")
+
+# Modèle fixe pour l'étape d'analyse, distinct du modèle choisi par le joueur
+# pour le round. Choisi après test comparatif sur les modèles disponibles via
+# Albert (conformité JSON, cohérence et finesse des commentaires) — voir
+# docs/prompts-systeme.md. Sans ce choix fixe, comparer deux modèles sur le
+# dashboard mélangeait deux variables : comment chacun joue, ET comment
+# chacun juge, ce qui rendait toute comparaison entre modèles peu fiable.
+ANALYST_MODEL = os.getenv("ANALYST_MODEL", "deepseek-v4-flash-0731")
 ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:8000").split(",")
@@ -169,6 +177,7 @@ class ResponseAnalysis(BaseModel):
 class SynthesisResponse(BaseModel):
     piques: list[PiqueAnalysis]
     responses: list[ResponseAnalysis]
+    analyst_model: str
 
 
 # Catégories fermées proposées au modèle-analyste. Le thème et la catégorie
@@ -223,6 +232,14 @@ SYCOPHANCY_CATEGORIES = [
 # fausse silencieusement les statistiques — un refus n'est ni de la
 # complaisance ni un contre-argument, c'est un comportement à part entière
 # qui mérite d'être observé pour lui-même.
+#
+# V6 : l'appel de synthèse utilisait jusqu'ici le même modèle que le round
+# (req.model) — l'analyste jugeait donc un modèle différent à chaque partie,
+# ce qui mélangeait deux variables dans le dashboard : comment un modèle
+# joue, et comment CE MÊME modèle juge. Fixé sur ANALYST_MODEL (voir plus
+# haut) pour que toutes les parties soient jugées avec la même grille,
+# rendant les comparaisons entre modèles sur le dashboard réellement
+# comparables.
 #
 # Limite méthodologique à ne pas perdre de vue (et documentée publiquement
 # sur la page Fondements et le dashboard) : cette classification vient d'un
@@ -441,7 +458,7 @@ async def game_synthesis(req: SynthesisRequest, request: Request):
 
     transcript = _build_transcript(req.history)
     payload = {
-        "model": req.model,
+        "model": ANALYST_MODEL,
         "messages": [
             {"role": "system", "content": ANALYST_SYSTEM_PROMPT},
             {"role": "user", "content": transcript},
@@ -469,7 +486,7 @@ async def game_synthesis(req: SynthesisRequest, request: Request):
     raw_content = resp.json()["choices"][0]["message"]["content"]
     try:
         parsed = _extract_json(raw_content)
-        synthesis = SynthesisResponse(**parsed)
+        synthesis = SynthesisResponse(**parsed, analyst_model=ANALYST_MODEL)
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=502,

@@ -59,11 +59,20 @@
     <p>
       <strong>Limite à ne pas minimiser :</strong> contrairement au protocole contrôlé de Sharma
       et al. (validation croisée, vérité terrain), cette classification est produite par un
-      second appel au même type de modèle : un LLM-juge, sans accord inter-évaluateurs ni vérité
-      terrain vérifiée. C'est une lecture pédagogique indicative de l'échange, pas une mesure
-      certifiée, y compris quand elle est agrégée par modèle sur le
-      <a href="dashboard.html">tableau de bord public</a>. À prendre comme un point de départ pour
-      observer et discuter, pas comme un verdict scientifique définitif sur tel ou tel modèle.
+      second appel à un modèle de langage — un LLM-juge, pas vérifiée par des humains. C'est une
+      lecture pédagogique indicative de l'échange, pas une mesure certifiée, y compris quand elle
+      est agrégée par modèle sur le <a href="dashboard.html">tableau de bord public</a>. À prendre
+      comme un point de départ pour observer et discuter, pas comme un verdict scientifique
+      définitif sur tel ou tel modèle.
+    </p>
+    <p>
+      <em>Historique :</em> ce LLM-juge (l'« analyste ») utilisait jusqu'ici le même modèle que
+      celui affronté par le joueur pendant la partie. Depuis, il est fixé sur un seul modèle
+      (<a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#synthese-analyste" target="_blank" rel="noopener noreferrer">voir le prompt</a>),
+      choisi après comparaison entre les modèles disponibles via Albert sur leur conformité de
+      format et la finesse de leurs commentaires. Sans ce choix fixe, comparer deux modèles sur le
+      tableau de bord mélangeait deux choses : comment chacun joue, et comment chacun juge — ce qui
+      rendait la comparaison entre modèles peu fiable.
     </p>
   </div>
 

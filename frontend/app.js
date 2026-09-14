@@ -14,8 +14,10 @@ const timerHint = document.getElementById("timer-hint");
 const timerDurationField = document.getElementById("timer-duration-field");
 const timerDurationInput = document.getElementById("timer-duration");
 const startBtn = document.getElementById("start-btn");
+const quickStartBtn = document.getElementById("quick-start-btn");
 const setupError = document.getElementById("setup-error");
 const quickSummary = document.getElementById("quick-summary");
+const entryActions = document.getElementById("entry-actions");
 const customizeToggle = document.getElementById("customize-toggle");
 const advancedFields = document.getElementById("advanced-fields");
 
@@ -138,12 +140,14 @@ async function loadModels() {
       modelSelect.appendChild(opt);
     });
     startBtn.disabled = false;
+    quickStartBtn.disabled = false;
   } catch (err) {
     setupError.textContent =
       "Impossible de récupérer la liste des modèles de langage (" + err.message + "). " +
       "Vérifie que le backend tourne et que ALBERT_API_KEY est configurée dans .env.";
     setupError.style.display = "block";
     startBtn.disabled = true;
+    quickStartBtn.disabled = true;
   }
 }
 
@@ -174,14 +178,18 @@ setupChoiceGroup(timerGroup, (value) => {
 
 customizeToggle.addEventListener("click", () => {
   advancedFields.style.display = "block";
+  startBtn.style.display = "block";
   quickSummary.style.display = "none";
-  customizeToggle.style.display = "none";
+  entryActions.style.display = "none";
 });
 
-// Le clic sur « Lancer la partie » ouvre systématiquement la pop-up
-// d'information/consentement (interaction avec une IA, rappel anti-données
-// sensibles, anonymisation) : la partie ne démarre réellement qu'à
-// l'acceptation explicite. Sans accord, pas de jeu.
+// Le clic sur « Partie rapide » ou « Lancer la partie » ouvre systématiquement
+// la pop-up d'information/consentement (interaction avec une IA, rappel
+// anti-données sensibles, anonymisation) : la partie ne démarre réellement
+// qu'à l'acceptation explicite. Sans accord, pas de jeu.
+quickStartBtn.addEventListener("click", () => {
+  consentModal.style.display = "flex";
+});
 startBtn.addEventListener("click", () => {
   consentModal.style.display = "flex";
 });
@@ -515,7 +523,10 @@ function renderSynthesis(data) {
 
   const radarBlock = document.createElement("div");
   radarBlock.className = "synthesis-block";
-  radarBlock.innerHTML = "<h2>Catégories argumentatives explorées</h2>";
+  radarBlock.innerHTML = `
+    <h2>Catégories argumentatives explorées</h2>
+    <p class="analyst-credit">Analysé par <strong>${escapeHtml(data.analyst_model)}</strong>, un modèle fixe pour toutes les parties (pour que les résultats restent comparables d'un modèle de jeu à l'autre).</p>
+  `;
 
   const radarRow = document.createElement("div");
   radarRow.className = "radar-compare";

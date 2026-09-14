@@ -66,8 +66,11 @@
     <div class="intro-dots"><span class="is-active"></span><span></span><span></span></div>
     <p class="setup-duration-hint">Compte 5 à 15 minutes, selon le nombre de tours choisi (5 à 10).</p>
 
-    <p class="quick-summary" id="quick-summary">Partie rapide : 5 tours, individuel, sans limite de temps.</p>
-    <button type="button" class="link-button" id="customize-toggle">Personnaliser la partie →</button>
+    <p class="quick-summary" id="quick-summary">Une partie rapide avec les réglages par défaut, ou choisis toi-même le mode, le modèle et le rythme.</p>
+    <div class="entry-actions" id="entry-actions">
+      <button type="button" id="quick-start-btn" class="cta-button">Partie rapide</button>
+      <button type="button" id="customize-toggle" class="cta-button">Partie personnalisée</button>
+    </div>
 
     <div id="advanced-fields" style="display:none;">
       <div class="field">
@@ -115,7 +118,7 @@
       </div>
     </div>
 
-    <button id="start-btn">Lancer la partie</button>
+    <button id="start-btn" class="cta-button" style="display:none;">Lancer la partie</button>
     <p id="setup-error"></p>
     <p class="dashboard-link"><a href="dashboard.html">Voir le tableau de bord public des tendances du modèle →</a></p>
   </div>
