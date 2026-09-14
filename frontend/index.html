@@ -49,18 +49,31 @@
           d'un LLM, et comment l'IA a réagi. Jamais pendant la partie.
         </p>
       </div>
+      <a class="intro-card intro-card-link" href="dashboard.html">
+        <div class="intro-card-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M4 20V10M11 20V4M18 20v-7" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2>Le tableau de bord</h2>
+        <p>
+          Les échanges anonymisés alimentent un tableau de bord public : de quoi voir ce que
+          chaque modèle répond, en pratique.
+        </p>
+        <span class="intro-card-cta">Voir les tendances →</span>
+      </a>
     </div>
-    <div class="intro-dots"><span></span><span></span></div>
+    <div class="intro-dots"><span></span><span></span><span></span></div>
     <p class="setup-duration-hint">Compte 5 à 15 minutes, selon le nombre de tours choisi (5 à 10).</p>
 
     <div class="field">
-      <label for="mode-select">Mode de jeu</label>
-      <select id="mode-select">
-        <option value="individuel" selected>Individuel</option>
-        <option value="collectif">Collectif</option>
-      </select>
+      <label>Mode de jeu</label>
+      <div class="btn-group" id="mode-group" role="group" aria-label="Mode de jeu">
+        <button type="button" class="btn-choice is-active" data-value="individuel">Individuel</button>
+        <button type="button" class="btn-choice" data-value="collectif">Collectif</button>
+      </div>
       <p class="field-hint" id="mode-hint" style="display:none;">
-        Les participants se mettent d'accord à l'oral (ou sur un canal externe) sur une seule pique par tour, qu'une seule personne saisit ici.
+        Les participants se mettent d'accord à l'oral (ou sur un canal externe) sur une seule réplique par tour, qu'une seule personne saisit ici.
       </p>
     </div>
 
@@ -70,25 +83,25 @@
     </div>
 
     <div class="field">
-      <label for="rounds-select">Nombre de tours</label>
-      <select id="rounds-select">
-        <option value="5" selected>5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-        <option value="10">10</option>
-      </select>
+      <label>Nombre de tours</label>
+      <div class="btn-group btn-group-compact" id="rounds-group" role="group" aria-label="Nombre de tours">
+        <button type="button" class="btn-choice is-active" data-value="5">5</button>
+        <button type="button" class="btn-choice" data-value="6">6</button>
+        <button type="button" class="btn-choice" data-value="7">7</button>
+        <button type="button" class="btn-choice" data-value="8">8</button>
+        <button type="button" class="btn-choice" data-value="9">9</button>
+        <button type="button" class="btn-choice" data-value="10">10</button>
+      </div>
     </div>
 
     <div class="field">
       <div class="checkbox-row">
         <input type="checkbox" id="timer-toggle" />
-        <label for="timer-toggle">Activer un timer par pique</label>
+        <label for="timer-toggle">Activer un timer par réplique</label>
       </div>
       <p class="field-hint">
         Un temps limité pousse à répondre par réflexe plutôt qu'en construisant son argument :
-        utile pour observer des réactions spontanées plutôt que des piques travaillées.
+        utile pour observer des réactions spontanées plutôt que des répliques travaillées.
       </p>
       <div class="field" id="timer-duration-field" style="display:none;">
         <label for="timer-duration">Durée (secondes)</label>
@@ -113,7 +126,7 @@
     </p>
     <p class="modal-warning">
       Aucune donnée personnelle ne doit être transmise : n'écris rien de sensible ou
-      identifiant dans tes piques (santé, origine, opinions, vie privée…).
+      identifiant dans tes répliques (santé, origine, opinions, vie privée…).
     </p>
     <p>
       Les échanges sont enregistrés de façon anonymisée pour alimenter un tableau de bord
@@ -148,7 +161,7 @@
   </header>
 
   <div class="collectif-banner" id="collectif-banner" style="display:none;">
-    Mode collectif : une seule pique validée par le groupe à chaque tour.
+    Mode collectif : une seule réplique validée par le groupe à chaque tour.
   </div>
 
   <div id="messages"></div>

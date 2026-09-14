@@ -5,10 +5,10 @@
 
 const setupScreen = document.getElementById("setup-screen");
 const gameScreen = document.getElementById("game-screen");
-const modeSelect = document.getElementById("mode-select");
+const modeGroup = document.getElementById("mode-group");
 const modeHint = document.getElementById("mode-hint");
 const modelSelect = document.getElementById("model-select");
-const roundsSelect = document.getElementById("rounds-select");
+const roundsGroup = document.getElementById("rounds-group");
 const timerToggle = document.getElementById("timer-toggle");
 const timerDurationField = document.getElementById("timer-duration-field");
 const timerDurationInput = document.getElementById("timer-duration");
@@ -106,9 +106,23 @@ timerToggle.addEventListener("change", () => {
   timerDurationField.style.display = timerToggle.checked ? "block" : "none";
 });
 
-modeSelect.addEventListener("change", () => {
-  modeHint.style.display = modeSelect.value === "collectif" ? "block" : "none";
+function getChoiceValue(group) {
+  return group.querySelector(".btn-choice.is-active").dataset.value;
+}
+
+function setupChoiceGroup(group, onChange) {
+  group.addEventListener("click", (e) => {
+    const btn = e.target.closest(".btn-choice");
+    if (!btn || btn.classList.contains("is-active")) return;
+    group.querySelectorAll(".btn-choice").forEach((b) => b.classList.toggle("is-active", b === btn));
+    if (onChange) onChange(btn.dataset.value);
+  });
+}
+
+setupChoiceGroup(modeGroup, (value) => {
+  modeHint.style.display = value === "collectif" ? "block" : "none";
 });
+setupChoiceGroup(roundsGroup);
 
 // Le clic sur « Lancer la partie » ouvre systématiquement la pop-up
 // d'information/consentement (interaction avec une IA, rappel anti-données
@@ -128,9 +142,9 @@ consentAcceptBtn.addEventListener("click", () => {
 });
 
 function beginGame() {
-  state.mode = modeSelect.value;
+  state.mode = getChoiceValue(modeGroup);
   state.model = modelSelect.value;
-  state.totalRounds = parseInt(roundsSelect.value, 10);
+  state.totalRounds = parseInt(getChoiceValue(roundsGroup), 10);
   state.timerEnabled = timerToggle.checked;
   state.timerDuration = parseInt(timerDurationInput.value, 10) || 30;
   state.currentRound = 1;
@@ -440,7 +454,7 @@ function renderSynthesis(data) {
   radarRow.className = "radar-compare";
 
   const playerRadarCol = document.createElement("div");
-  playerRadarCol.innerHTML = '<p class="score-label">Joueur : thèmes des piques</p>';
+  playerRadarCol.innerHTML = '<p class="score-label">Joueur : thèmes des répliques</p>';
   playerRadarCol.appendChild(buildRadarSvg(themeItems));
   playerRadarCol.appendChild(buildRadarLegend(themeItems));
 
@@ -472,7 +486,7 @@ function renderSynthesis(data) {
     piqueCol.className = "detail-col";
     piqueCol.innerHTML = `
       <div class="pique-detail-head">
-        <strong>Pique ${p.index + 1}</strong>
+        <strong>Réplique ${p.index + 1}</strong>
         <span class="pique-theme">${escapeHtml(p.theme)}</span>
         <span class="pique-score">${p.understanding_score}/2</span>
       </div>
