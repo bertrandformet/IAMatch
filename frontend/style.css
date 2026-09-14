@@ -1,21 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
 :root {
-  --bg: #f2f2f7;
-  --ink: #1c1c1e;
-  --muted: #6e6e73;
-  --player-bubble: #e5e5ea;
-  --ai-bubble: #0b84ff;
+  --bg: #f9f9f7;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --player-bubble: #ececea;
+  --ai-bubble: #2a78d6;
   --ai-bubble-ink: #ffffff;
-  --accent: #0b84ff;
+  --accent: #2a78d6;
   --danger: #d70015;
-  --card: #ffffff;
-  --border: #d1d1d6;
+  --card: #fcfcfb;
+  --border: #e1e0d9;
+  --chip: #ececea;
+  --font-display: "Archivo Black", "Arial Black", sans-serif;
+  --font-body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--ink);
 }
@@ -39,36 +45,106 @@ body {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
+.setup-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.setup-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--chip);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
 .setup-card h1 {
-  margin: 0 0 4px;
-  font-size: 24px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 42px;
+  line-height: 1;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
 }
 
 .setup-card .subtitle {
-  color: var(--muted);
-  margin: 0 0 24px;
+  color: var(--ink-2);
+  margin: 0;
   font-size: 14px;
-}
-
-.game-intro {
-  background: var(--bg);
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 20px;
-}
-
-.game-intro p {
-  font-size: 13px;
-  color: var(--ink);
-  margin: 0 0 8px;
   line-height: 1.4;
 }
 
-.game-intro p:last-child { margin-bottom: 0; }
+/* --- Carrousel de présentation du principe --- */
+.intro-carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin: 0 -32px 14px;
+  padding: 0 32px 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
 
-.game-intro-duration {
-  color: var(--muted) !important;
-  font-size: 12px !important;
+.intro-carousel::-webkit-scrollbar { display: none; }
+
+.intro-card {
+  flex: 0 0 82%;
+  scroll-snap-align: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.intro-card-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--chip);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.intro-card h2 {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.intro-card p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+}
+
+.intro-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.intro-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+}
+
+.intro-dots span:first-child { background: var(--ink); }
+
+.setup-duration-hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 20px;
 }
 
 .field { margin-bottom: 18px; }

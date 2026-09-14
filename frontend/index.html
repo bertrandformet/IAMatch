@@ -11,23 +11,47 @@
 <!-- Écran de configuration -->
 <section id="setup-screen" class="screen active">
   <div class="setup-card">
-    <h1>IA Match</h1>
-    <p class="subtitle">Configure ta partie avant de lancer le match.</p>
-
-    <div class="game-intro">
-      <p>
-        Affirme ce qui te distingue d'une IA (« Contrairement à une IA, je… ») : elle relance
-        avec sa propre affirmation, sans qu'on lui dise quelle position défendre, pour
-        observer sa réaction spontanée sur le fond.
-      </p>
-      <p>
-        Une fois la partie terminée, une synthèse analyse deux choses : est-ce que tes
-        affirmations reflètent une compréhension juste de ce qu'un LLM peut ou ne peut pas
-        faire, et comment l'IA a réagi (concession, contre-argument, flatterie…). Jamais
-        pendant la partie, seulement à la fin, pour ne pas influencer l'échange.
-      </p>
-      <p class="game-intro-duration">Compte 5 à 15 minutes pour une partie, selon le nombre de tours choisi (5 à 10).</p>
+    <div class="setup-header">
+      <div class="setup-logo">
+        <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+          <path d="M6 8 L14 16 L6 24" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M26 8 L18 16 L26 24" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>IA Match</h1>
+      <p class="subtitle">Configure ta partie avant de lancer le match.</p>
     </div>
+
+    <div class="intro-carousel">
+      <div class="intro-card">
+        <div class="intro-card-icon">
+          <svg width="15" height="15" viewBox="0 0 32 32" fill="none">
+            <path d="M4 10 L14 16 L4 22" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M28 10 L18 16 L28 22" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2>Le match</h2>
+        <p>
+          Affirme ce qui te distingue d'une IA (« Contrairement à une IA, je… ») : elle relance
+          avec sa propre affirmation, sans qu'on lui dise quelle position défendre.
+        </p>
+      </div>
+      <div class="intro-card">
+        <div class="intro-card-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <circle cx="10" cy="10" r="6.5" stroke="var(--ink)" stroke-width="2"/>
+            <line x1="15" y1="15" x2="20" y2="20" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2>La synthèse</h2>
+        <p>
+          À la fin, une synthèse regarde si tes affirmations reflètent une compréhension juste
+          d'un LLM, et comment l'IA a réagi. Jamais pendant la partie.
+        </p>
+      </div>
+    </div>
+    <div class="intro-dots"><span></span><span></span></div>
+    <p class="setup-duration-hint">Compte 5 à 15 minutes, selon le nombre de tours choisi (5 à 10).</p>
 
     <div class="field">
       <label for="mode-select">Mode de jeu</label>

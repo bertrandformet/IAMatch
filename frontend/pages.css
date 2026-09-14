@@ -12,7 +12,12 @@
   font-size: 14px;
 }
 
-.page-container h1 { margin: 0 0 8px; font-size: 26px; }
+.page-container h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin: 0 0 10px;
+  font-size: 28px;
+}
 
 .page-intro {
   color: var(--muted);
