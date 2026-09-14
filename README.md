@@ -45,6 +45,7 @@ frontend/
   dashboard.html/js      Tableau de bord public
   anonymisation.html, fondements.html, a-propos-ia.html   Pages de fond
 docs/brief/             Brief, notes scientifiques, checklists RGPD/AI Act
+docs/prompts-systeme.md Copie exacte des system prompts (round de jeu, analyse)
 ```
 
 ## Lancer en local

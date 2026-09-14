@@ -52,9 +52,9 @@
       réponse vers ce que l'utilisateur semble vouloir entendre, ou reprendre ses erreurs sans les
       corriger. Ces comportements se retrouvent de façon cohérente chez plusieurs assistants IA
       différents, ce qui suggère une propriété générale de l'entraînement plutôt qu'un trait isolé
-      d'un modèle en particulier. IA Match reprend cette grille (enrichie de deux catégories
-      propres au jeu : concession légitime et contre-argument ferme) pour classer la réaction de
-      l'IA à chaque tour.
+      d'un modèle en particulier. IA Match reprend cette grille (enrichie de trois catégories
+      propres au jeu : concession légitime, contre-argument ferme et refus de jouer le jeu) pour
+      classer la réaction de l'IA à chaque tour.
     </p>
     <p>
       <strong>Limite à ne pas minimiser :</strong> contrairement au protocole contrôlé de Sharma
@@ -125,6 +125,18 @@
       Construire un dispositif sur des références vérifiables plutôt que sur des intuitions bien
       intentionnées : c'est l'exigence défendue par les chercheurs en sciences cognitives appliquées
       à l'éducation, et c'est elle qui justifie cette page plutôt qu'une simple promesse de sérieux.
+    </p>
+  </div>
+
+  <div class="page-block">
+    <h2>8. Transparence : les prompts système exacts</h2>
+    <p>
+      Plutôt que de décrire la méthode en général, voici le texte exact envoyé au modèle à
+      chaque étape : le
+      <a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#round-de-jeu" target="_blank" rel="noopener noreferrer">prompt du round de jeu</a>
+      (qui ne contraint que la forme de la réponse, jamais la posture) et le
+      <a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#synthese-analyste" target="_blank" rel="noopener noreferrer">prompt de l'analyse de synthèse</a>
+      (qui produit les scores et catégories décrits ci-dessus).
     </p>
   </div>
 
