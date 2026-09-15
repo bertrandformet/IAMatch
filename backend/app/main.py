@@ -596,11 +596,15 @@ async def dashboard(model: Optional[str] = None):
             )
         ]
 
+        # Groupé par (jour, modèle) plutôt que par jour seul : quand aucun
+        # modèle n'est filtré, le frontend peut ainsi comparer les modèles
+        # entre eux jour par jour (barre générale + barres par modèle),
+        # plutôt qu'une seule tendance agrégée qui les mélange.
         timeline = [
-            {"date": row[0], "count": row[1]}
+            {"date": row[0], "model": row[1], "count": row[2]}
             for row in conn.execute(
-                f"SELECT date(created_at) AS d, COUNT(*) FROM exchange_records {where_clause} "
-                "GROUP BY d ORDER BY d ASC",
+                f"SELECT date(created_at) AS d, model, COUNT(*) FROM exchange_records {where_clause} "
+                "GROUP BY d, model ORDER BY d ASC, model ASC",
                 params,
             )
         ]

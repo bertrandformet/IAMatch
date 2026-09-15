@@ -93,12 +93,34 @@ function renderThemeBreakdown(matrix) {
   return el(`<div class="dashboard-block"><h2>Répartition par thème (joueur)</h2>${rows}</div>`);
 }
 
+// Regroupe les lignes plates (date, modèle, count) de l'API en un total par
+// jour + un détail par modèle ce même jour — ordre déjà chronologique côté
+// SQL (ORDER BY d ASC), donc pas besoin de re-trier ici.
+function pivotTimeline(rows) {
+  const byDate = new Map();
+  rows.forEach((r) => {
+    if (!byDate.has(r.date)) byDate.set(r.date, { date: r.date, total: 0, byModel: {} });
+    const entry = byDate.get(r.date);
+    entry.total += r.count;
+    entry.byModel[r.model] = (entry.byModel[r.model] || 0) + r.count;
+  });
+  return Array.from(byDate.values());
+}
+
+// Couleur déterministe par modèle (angle doré : bien répartie quel que soit
+// le nombre de modèles présents, pas de palette figée à entretenir).
+function modelColor(index) {
+  return `hsl(${Math.round((index * 137.5) % 360)}, 60%, 50%)`;
+}
+
 // Histogramme SVG à la main (pas de librairie de graphiques, cf. stack "sans
 // étape de build") : une courbe/aire avec un seul jour de données n'affiche
 // qu'un point isolé, illisible et donnant l'impression d'un graphique cassé.
-// Une barre par jour reste lisible dès le premier jour, et continue de
-// fonctionner une fois l'usage réel accumulé sur plusieurs jours.
-function buildTimelineSvg(timeline) {
+// Une barre générale par jour, accolée d'une barre par modèle quand plus
+// d'un modèle est présent (aucun filtre "Modèle" actif) — dégénère en une
+// simple barre par jour dès qu'un seul modèle est en jeu (filtre actif, ou
+// données qui n'en contiennent qu'un pour l'instant).
+function buildTimelineSvg(days, models) {
   const width = 600;
   const height = 220;
   const padLeft = 28;
@@ -108,11 +130,15 @@ function buildTimelineSvg(timeline) {
   const innerWidth = width - padLeft - padRight;
   const innerHeight = height - padTop - padBottom;
 
-  const n = timeline.length;
-  const maxCount = Math.max(1, ...timeline.map((t) => t.count));
+  const n = days.length;
+  const showModelBars = models.length > 1;
+  const barsPerSlot = showModelBars ? models.length + 1 : 1;
+  const maxCount = Math.max(1, ...days.map((d) => d.total));
   const slotWidth = innerWidth / n;
-  const barWidth = Math.min(36, slotWidth * 0.5);
-  const xFor = (i) => padLeft + slotWidth * (i + 0.5);
+  const gap = 2;
+  const barWidth = Math.min(showModelBars ? 14 : 36, (slotWidth - gap * (barsPerSlot - 1)) / barsPerSlot);
+  const clusterWidth = barWidth * barsPerSlot + gap * (barsPerSlot - 1);
+  const xForSlot = (i) => padLeft + slotWidth * (i + 0.5);
   const yFor = (v) => padTop + innerHeight - (v / maxCount) * innerHeight;
 
   const svgNS = "http://www.w3.org/2000/svg";
@@ -138,37 +164,68 @@ function buildTimelineSvg(timeline) {
     svg.appendChild(axisLabel);
   });
 
-  timeline.forEach((t, i) => {
-    const x = xFor(i);
-    const yTop = yFor(t.count);
+  days.forEach((day, i) => {
+    const clusterStart = xForSlot(i) - clusterWidth / 2;
 
-    const bar = document.createElementNS(svgNS, "rect");
-    bar.setAttribute("x", x - barWidth / 2);
-    bar.setAttribute("y", yTop);
-    bar.setAttribute("width", barWidth);
-    bar.setAttribute("height", Math.max(0, padTop + innerHeight - yTop));
-    bar.setAttribute("rx", 3);
-    bar.setAttribute("class", "timeline-bar");
-    svg.appendChild(bar);
+    const totalTop = yFor(day.total);
+    const totalBar = document.createElementNS(svgNS, "rect");
+    totalBar.setAttribute("x", clusterStart);
+    totalBar.setAttribute("y", totalTop);
+    totalBar.setAttribute("width", barWidth);
+    totalBar.setAttribute("height", Math.max(0, padTop + innerHeight - totalTop));
+    totalBar.setAttribute("rx", 2);
+    totalBar.setAttribute("class", "timeline-bar-total");
+    svg.appendChild(totalBar);
 
-    const countLabel = document.createElementNS(svgNS, "text");
-    countLabel.setAttribute("x", x);
-    countLabel.setAttribute("y", yTop - 6);
-    countLabel.setAttribute("class", "timeline-count-label");
-    countLabel.setAttribute("text-anchor", "middle");
-    countLabel.textContent = String(t.count);
-    svg.appendChild(countLabel);
+    const totalLabel = document.createElementNS(svgNS, "text");
+    totalLabel.setAttribute("x", clusterStart + barWidth / 2);
+    totalLabel.setAttribute("y", totalTop - 5);
+    totalLabel.setAttribute("class", "timeline-count-label");
+    totalLabel.setAttribute("text-anchor", "middle");
+    totalLabel.textContent = String(day.total);
+    svg.appendChild(totalLabel);
+
+    if (showModelBars) {
+      models.forEach((m, mi) => {
+        const count = day.byModel[m] || 0;
+        const x = clusterStart + (mi + 1) * (barWidth + gap);
+        const top = yFor(count);
+        const bar = document.createElementNS(svgNS, "rect");
+        bar.setAttribute("x", x);
+        bar.setAttribute("y", top);
+        bar.setAttribute("width", barWidth);
+        bar.setAttribute("height", Math.max(0, padTop + innerHeight - top));
+        bar.setAttribute("rx", 2);
+        bar.setAttribute("class", "timeline-model-bar");
+        bar.setAttribute("fill", modelColor(mi));
+        svg.appendChild(bar);
+      });
+    }
 
     const dateLabel = document.createElementNS(svgNS, "text");
-    dateLabel.setAttribute("x", x);
+    dateLabel.setAttribute("x", xForSlot(i));
     dateLabel.setAttribute("y", height - padBottom + 16);
     dateLabel.setAttribute("class", "timeline-label");
     dateLabel.setAttribute("text-anchor", "middle");
-    dateLabel.textContent = t.date.slice(5); // MM-JJ, plus compact que la date complète
+    dateLabel.textContent = day.date.slice(5); // MM-JJ, plus compact que la date complète
     svg.appendChild(dateLabel);
   });
 
   return svg;
+}
+
+function buildTimelineLegend(models) {
+  if (models.length <= 1) return null;
+  const legend = document.createElement("div");
+  legend.className = "timeline-legend";
+  const items = [`<span class="timeline-legend-item"><span class="timeline-swatch timeline-swatch-total"></span>Total</span>`].concat(
+    models.map(
+      (m, i) =>
+        `<span class="timeline-legend-item"><span class="timeline-swatch" style="background:${modelColor(i)}"></span>${escapeHtml(m)}</span>`
+    )
+  );
+  legend.innerHTML = items.join("");
+  return legend;
 }
 
 function renderTimeline(timeline) {
@@ -176,11 +233,16 @@ function renderTimeline(timeline) {
     return el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
   }
+  const days = pivotTimeline(timeline);
+  const models = Array.from(new Set(timeline.map((r) => r.model))).sort();
+  const compare = models.length > 1 ? ", barre générale et une barre par modèle" : "";
   const block = el(`<div class="dashboard-block">
     <h2>Évolution dans le temps</h2>
-    <p class="block-subtitle">Nombre d'échanges (réplique + réponse IA) analysés par jour.</p>
+    <p class="block-subtitle">Nombre d'échanges (réplique + réponse IA) analysés par jour${compare}.</p>
   </div>`);
-  block.appendChild(buildTimelineSvg(timeline));
+  const legend = buildTimelineLegend(models);
+  if (legend) block.appendChild(legend);
+  block.appendChild(buildTimelineSvg(days, models));
   return block;
 }
 
