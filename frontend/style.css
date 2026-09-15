@@ -319,6 +319,11 @@ body {
   font-weight: 600;
 }
 
+.modal-age-note {
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .modal-actions {
   display: flex;
   gap: 10px;

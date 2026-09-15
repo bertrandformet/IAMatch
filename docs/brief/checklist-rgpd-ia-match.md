@@ -106,7 +106,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
-| Le seuil de déclenchement d'une AIPD a été vérifié formellement. | Art. 35 RGPD ; lignes directrices CEPD (ex-G29, WP248) — grille des 9 critères, seuil CNIL à 2 critères réunis | ☐ **Faux** | Estimation rapide (non formalisée) : au moins deux des neuf critères semblent réunis — **personnes vulnérables** (le jeu est ouvert « tous publics » sans exclusion explicite des mineurs) et **usage innovant** (analyse comportementale d'un LLM en temps réel). Cela va à l'encontre de l'hypothèse initiale « probablement non requise » formulée plus tôt dans l'échange : une AIPD est vraisemblablement recommandée, à documenter formellement plutôt qu'à écarter par supposition. |
+| Le seuil de déclenchement d'une AIPD a été vérifié formellement. | Art. 35 RGPD ; lignes directrices CEPD (ex-G29, WP248) — grille des 9 critères, seuil CNIL à 2 critères réunis | ☐ **Faux** | Estimation rapide (non formalisée) : au moins deux des neuf critères semblent réunis — **personnes vulnérables** (le jeu reste ouvert « tous publics », sans mécanisme d'exclusion ni de vérification des mineurs) et **usage innovant** (analyse comportementale d'un LLM en temps réel). Mitigation partielle ajoutée depuis (pop-up de consentement, frontend/index.html) : un avertissement indique que le jeu s'adresse en priorité aux plus de 14 ans (seuil aligné sur le cadre d'usage de l'IA en éducation du ministère de l'Éducation nationale, juin 2025, qui autorise l'usage autonome d'IA générative à partir de la 4ème) et recommande un accompagnement adulte en dessous — un texte informatif, pas une vérification d'âge ni une exclusion, qui ne fait donc pas disparaître le critère « personnes vulnérables » de la grille. Une AIPD reste vraisemblablement recommandée, à documenter formellement plutôt qu'à écarter par supposition. |
 
 ---
 
@@ -114,7 +114,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 *Mise à jour après implémentation — points résolus retirés de cette liste, gardés comme « Vrai » documenté dans les sections ci-dessus plutôt que supprimés silencieusement.*
 
-1. **AIPD probablement nécessaire** (section 11) — à documenter formellement, notamment le critère « personnes vulnérables » si les mineurs ne sont pas explicitement exclus.
+1. **AIPD probablement nécessaire** (section 11) — à documenter formellement ; le critère « personnes vulnérables » reste réuni malgré l'avertissement d'âge ajouté à la pop-up de consentement (information, pas exclusion ni vérification).
 2. Journaux d'accès techniques que l'hébergeur (Render) peut conserver de son côté (section 4) — hors du contrôle applicatif, non traité dans le brief actuel.
 3. Chiffrement au repos d'un stockage réellement persistant (section 8) — dépend de la migration SQLite → Postgres/Supabase, pas encore faite (le SQLite actuel est éphémère sur le tier gratuit Render, donc non persistant plutôt que non chiffré).
 4. Test de mise en balance des intérêts pour la base légale d'intérêt légitime (section 3).
