@@ -11,20 +11,26 @@ Projet [Une IA par jour](https://uneiaparjour.fr).
 
 ## Principe
 
-1. **Configuration** : mode individuel ou collectif, modèle de langage, nombre de tours (5 à 10),
-   timer optionnel.
+1. **Configuration** : mode individuel ou collectif (le collectif suit ses propres 4 étapes
+   chronométrées — réflexion individuelle, tirage au sort, amélioration collective, envoi — plutôt
+   qu'une simple saisie libre), modèle de langage, nombre de tours (5 à 10), timer optionnel
+   (individuel uniquement).
 2. **Round de jeu** : appel à l'API Albert (DINUM) avec un system prompt limité à la forme
-   (brièveté, pas de liste à puces). La posture argumentative de l'IA (concéder ou
-   contre-attaquer) reste libre, pour observer son comportement réel.
+   (brièveté, pas de liste à puces), chronométré côté serveur (temps de réponse remonté au
+   dashboard). La posture argumentative de l'IA (concéder ou contre-attaquer) reste libre, pour
+   observer son comportement réel — sauf message hors-sujet (refus + redirection vers le format du
+   jeu) ou détresse réelle (abandon du jeu, redirection vers une aide réelle : 3114, médecin de
+   garde, SAMU selon le cas).
 3. **Synthèse** : un second appel, avec cette fois un system prompt d'analyste, relit tout
    l'échange après coup : thème et score de compréhension des LLM de chaque affirmation,
-   catégorie de réaction de l'IA (inspirée de la recherche sur la sycophantie des LLM, voir
+   catégorie de réaction de l'IA (inspirée de la recherche sur la sycophantie des LLM, enrichie de
+   catégories propres au jeu dont un faux positif de sécurité — voir
    [Fondements](frontend/fondements.html), qui documente aussi les limites méthodologiques de
    cette classification). Ce second appel utilise un modèle fixe (`ANALYST_MODEL`), indépendant
    du modèle de jeu choisi par le joueur, pour que les comparaisons entre modèles sur le dashboard
    ne mélangent pas comment un modèle joue et comment il juge.
-4. **Dashboard public** : les échanges anonymisés (thème + score + catégorie, jamais le texte)
-   alimentent un tableau de bord agrégé, filtrable par modèle.
+4. **Dashboard public** : les échanges anonymisés (thème + score + catégorie + temps de réponse,
+   jamais le texte) alimentent un tableau de bord agrégé, filtrable par modèle.
 
 Pages de fond : [Anonymisation](frontend/anonymisation.html) · [Fondements](frontend/fondements.html) ·
 [À propos de l'IA](frontend/a-propos-ia.html).

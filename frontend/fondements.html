@@ -57,9 +57,10 @@
       réponse vers ce que l'utilisateur semble vouloir entendre, ou reprendre ses erreurs sans les
       corriger. Ces comportements se retrouvent de façon cohérente chez plusieurs assistants IA
       différents, ce qui suggère une propriété générale de l'entraînement plutôt qu'un trait isolé
-      d'un modèle en particulier. IA Match reprend cette grille (enrichie de trois catégories
-      propres au jeu : concession légitime, contre-argument ferme et refus de jouer le jeu) pour
-      classer la réaction de l'IA à chaque tour.
+      d'un modèle en particulier. IA Match reprend cette grille (enrichie de quatre catégories
+      propres au jeu : concession légitime, contre-argument ferme, refus de jouer le jeu et faux
+      positif sécurité — l'IA déclenche à tort un message d'urgence sur un point de jeu légitime,
+      mal interprété comme une détresse réelle) pour classer la réaction de l'IA à chaque tour.
     </p>
     <p>
       <strong>Limite à ne pas minimiser :</strong> contrairement au protocole contrôlé de Sharma
@@ -156,7 +157,8 @@
       Plutôt que de décrire la méthode en général, voici le texte exact envoyé au modèle à
       chaque étape : le
       <a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#round-de-jeu" target="_blank" rel="noopener noreferrer">prompt du round de jeu</a>
-      (qui ne contraint que la forme de la réponse, jamais la posture) et le
+      (qui ne contraint que la forme de la réponse — et redirige en cas de message hors-sujet ou de
+      détresse réelle — jamais la posture argumentative) et le
       <a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#synthese-analyste" target="_blank" rel="noopener noreferrer">prompt de l'analyse de synthèse</a>
       (qui produit les scores et catégories décrits ci-dessus).
     </p>
