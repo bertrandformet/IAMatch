@@ -196,6 +196,30 @@ def test_game_synthesis_invalid_json_returns_502(monkeypatch):
     assert "non interprétable" in res.json()["detail"]
 
 
+def test_game_synthesis_incomplete_schema_returns_concise_502(monkeypatch):
+    # Observé en conditions réelles : l'analyste a renvoyé un JSON valide mais
+    # incomplet (ai_understanding_score/ai_understanding_comment absents sur
+    # chaque réponse) — la liste brute d'erreurs Pydantic ne doit jamais
+    # atteindre le joueur telle quelle (un paragraphe technique par champ).
+    incomplete_json = {
+        "piques": [{"index": 0, "theme": "corps", "understanding_score": 2, "understanding_comment": "x"}],
+        "responses": [{"index": 0, "category": "concession_legitime", "explanation": "x"}],
+    }
+    _patch_albert(monkeypatch, [FakeResponse(_chat_completion(json.dumps(incomplete_json)))])
+    client = TestClient(main.app)
+    history = [
+        {"role": "user", "content": "Contrairement à une IA, j'ai un corps"},
+        {"role": "assistant", "content": "Je n'ai pas de corps. Contrairement à un humain, je ne dors jamais."},
+    ]
+
+    res = client.post("/api/game/synthesis", json={"model": "mistral-test", "history": history})
+
+    assert res.status_code == 502
+    detail = res.json()["detail"]
+    assert "non interprétable" in detail
+    assert len(detail) < 100  # jamais le dump multi-paragraphe de ValidationError
+
+
 def test_game_synthesis_drops_hallucinated_out_of_range_entries(monkeypatch):
     # Observé en conditions réelles : 1 tour envoyé (donc seul l'index 0 est
     # valide), l'analyste en renvoie 2 dont un index 1 inventé de toutes

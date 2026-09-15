@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(ROOT_DIR / ".env")
@@ -361,6 +361,17 @@ CHAT_MODEL_TYPES = ("text-generation", "image-text-to-text")
 # (ex. "encoder" ne doit pas matcher "code").
 EXCLUDED_CHAT_MODEL_TOKENS = {"code", "coder", "ocr"}
 
+# Exclusion nominative (pas par catégorie, cf. EXCLUDED_CHAT_MODEL_TOKENS
+# ci-dessus) : observé en conditions réelles sur plusieurs parties de test,
+# ministral-3-8b-instruct-2512 produit un texte incohérent de façon récurrente
+# (mots inventés, morceaux de phrase dans une autre langue — polonais observé
+# une fois — insérés au milieu d'une réponse en français). Un modèle à 8B
+# paramètres reste probablement trop petit pour tenir correctement le prompt
+# de jeu (V7, plusieurs branches conditionnelles) sur la durée d'une partie.
+# Retiré de la sélection plutôt que de multiplier les contraintes de prompt
+# pour un seul modèle.
+EXCLUDED_MODEL_IDS = {"ministral-3-8b-instruct-2512"}
+
 
 def _model_tokens(model: dict) -> set[str]:
     names = [model.get("id", "")] + list(model.get("aliases") or [])
@@ -374,6 +385,8 @@ def _filter_chat_models(data: list[dict]) -> list[dict]:
     models = []
     for m in data:
         if "id" not in m or m.get("type") not in CHAT_MODEL_TYPES:
+            continue
+        if m["id"] in EXCLUDED_MODEL_IDS:
             continue
         if _model_tokens(m) & EXCLUDED_CHAT_MODEL_TOKENS:
             continue
@@ -631,10 +644,24 @@ async def game_synthesis(req: SynthesisRequest, request: Request):
     try:
         parsed = _extract_json(raw_content)
         synthesis = SynthesisResponse(**parsed, analyst_model=ANALYST_MODEL)
-    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+    except json.JSONDecodeError as exc:
         raise HTTPException(
             status_code=502,
-            detail=f"Réponse de synthèse non interprétable (JSON invalide) : {exc}",
+            detail="Réponse de synthèse non interprétable (JSON invalide).",
+        ) from exc
+    except ValidationError as exc:
+        # Message concis pour le joueur : la liste brute d'erreurs Pydantic
+        # (un paragraphe par champ manquant/invalide, avec liens de doc) n'a
+        # aucun sens côté client — observé en conditions réelles quand
+        # l'analyste omet des champs requis sur un tour au contenu confus.
+        raise HTTPException(
+            status_code=502,
+            detail="Réponse de synthèse non interprétable (schéma JSON incomplet).",
+        ) from exc
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Réponse de synthèse non interprétable : {exc}",
         ) from exc
 
     # Filet de sécurité contre l'hallucination du modèle-analyste : observé en

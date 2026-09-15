@@ -266,16 +266,17 @@ consentAcceptBtn.addEventListener("click", () => {
 
 // Différenciation réelle du mode collectif (avant : seul un bandeau de texte
 // changeait, aucune mécanique propre) — un tour se déroule en 4 étapes
-// chronométrées et affichées à l'écran plutôt qu'une simple saisie libre.
-// Durées resserrées par rapport à une proposition initiale de 1/1/3/1 min
-// (6 min/tour) : sur une partie de 5 à 10 tours, ça aurait largement dépassé
-// l'estimation "5 à 15 minutes" affichée à l'accueil. Un bouton "Passer"
-// permet d'avancer plus tôt si le groupe a fini avant la fin du minuteur.
+// chronométrées et affichées à l'écran plutôt qu'une simple saisie libre :
+// 1 min de réflexion individuelle, 1 min de tirage au sort d'une proposition,
+// 3 min d'amélioration collective, 1 min d'envoi (~6 min/tour au total,
+// affiché à l'accueil en mode collectif — voir mode-hint dans index.html).
+// Un bouton "Passer" permet d'avancer plus tôt si le groupe a fini avant la
+// fin du minuteur.
 const COLLECTIF_PHASES = [
-  { label: "Chacun réfléchit de son côté à une affirmation", duration: 45, composerEnabled: false },
-  { label: "Tirez au sort qui propose sa phrase, relisez-la à voix haute", duration: 20, composerEnabled: true },
-  { label: "Améliorez la phrase ensemble avant de l'envoyer", duration: 90, composerEnabled: true },
-  { label: "Dernière relecture, envoyez votre pique", duration: 30, composerEnabled: true, isLast: true },
+  { label: "Chacun réfléchit de son côté à une affirmation", duration: 60, composerEnabled: false },
+  { label: "Tirez au sort qui propose sa phrase, relisez-la à voix haute", duration: 60, composerEnabled: true },
+  { label: "Améliorez la phrase ensemble avant de l'envoyer", duration: 180, composerEnabled: true },
+  { label: "Dernière relecture, envoyez votre pique", duration: 60, composerEnabled: true, isLast: true },
 ];
 
 function startCollectifPhase(index) {

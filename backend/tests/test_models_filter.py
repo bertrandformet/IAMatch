@@ -22,9 +22,16 @@ def test_filter_chat_models_keeps_general_purpose_text_and_multimodal_models():
         "openai/gpt-oss-120b",
         "deepseek-v4-flash",
         "mistral-small-3-2-24b-instruct-2506",
-        "ministral-3-8b-instruct-2512",
         "gemma-4-31b-it",
     }
+
+
+def test_filter_chat_models_excludes_ministral_3_8b_for_quality():
+    # Exclusion nominative (pas par catégorie/token) : texte incohérent
+    # observé de façon récurrente en conditions réelles (mots inventés,
+    # morceaux de phrase dans une autre langue).
+    result = {m["id"] for m in _filter_chat_models(SAMPLE_ALBERT_MODELS)}
+    assert "ministral-3-8b-instruct-2512" not in result
 
 
 def test_filter_chat_models_excludes_embeddings_rerank_and_audio():
