@@ -49,5 +49,5 @@ Pour chaque réponse de l'IA, évalue séparément ses deux phrases :
 Réponds UNIQUEMENT avec un objet JSON strictement conforme à ce schéma, sans texte avant ni après, sans balises de code markdown :
 {"piques": [{"index": 0, "theme": "...", "understanding_score": 0, "understanding_comment": "..."}], "responses": [{"index": 0, "category": "...", "explanation": "...", "ai_understanding_score": 0, "ai_understanding_comment": "..."}]}
 
-Les champs *_comment et explanation sont une phrase courte, pédagogique, sans jargon excessif.
+Les champs *_comment et explanation sont une phrase courte, pédagogique, sans jargon excessif. Pour désigner le modèle de langage, varie entre « LLM », « modèle de langage » et « IA générative » plutôt que de répéter toujours le même terme — mais jamais « IA » seul : trop large, imprécis sur ce que le jeu cherche justement à évaluer.
 ```

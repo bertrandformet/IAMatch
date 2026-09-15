@@ -584,7 +584,10 @@ function renderSynthesis(data) {
   addReplayButton(panel);
 
   messagesEl.appendChild(panel);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  // Ancré sur le début de la synthèse (le score), pas sur la fin du long
+  // panneau qui vient d'être ajouté : sans ça, le joueur devait remonter
+  // manuellement pour voir son score après la fin de partie.
+  panel.scrollIntoView({ block: "start", behavior: "smooth" });
 }
 
 // items : [{label: string, value: number}] — générique, utilisé pour les

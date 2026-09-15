@@ -98,8 +98,9 @@
 
 .timeline-svg { width: 100%; height: auto; display: block; }
 .timeline-grid { stroke: var(--border); stroke-width: 1; }
-.timeline-area { fill: rgba(11, 132, 255, 0.12); stroke: none; }
-.timeline-line { fill: none; stroke: var(--accent); stroke-width: 2; }
-.timeline-point { fill: var(--accent); }
+.timeline-bar { fill: var(--accent); }
+.timeline-count-label { font-size: 11px; font-weight: 600; fill: var(--ink); }
 .timeline-label { font-size: 10px; fill: var(--muted); }
 .timeline-axis-label { font-size: 9px; fill: var(--muted); }
+
+.block-subtitle { font-size: 12px; color: var(--muted); margin: 0 0 14px; }

@@ -68,7 +68,7 @@ function renderThemeBreakdown(matrix) {
     (a, b) => Object.values(b[1]).reduce((x, y) => x + y, 0) - Object.values(a[1]).reduce((x, y) => x + y, 0)
   );
   if (themes.length === 0) {
-    return el(`<div class="dashboard-block"><h2>Répartition par thème</h2>
+    return el(`<div class="dashboard-block"><h2>Répartition par thème (joueur)</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
   }
 
@@ -90,12 +90,14 @@ function renderThemeBreakdown(matrix) {
     })
     .join("");
 
-  return el(`<div class="dashboard-block"><h2>Répartition par thème</h2>${rows}</div>`);
+  return el(`<div class="dashboard-block"><h2>Répartition par thème (joueur)</h2>${rows}</div>`);
 }
 
-// Courbe SVG à la main (pas de librairie de graphiques, cf. stack "sans
-// étape de build") plutôt qu'une barre par jour : plus lisible pour repérer
-// une tendance sur plusieurs jours une fois l'usage réel accumulé.
+// Histogramme SVG à la main (pas de librairie de graphiques, cf. stack "sans
+// étape de build") : une courbe/aire avec un seul jour de données n'affiche
+// qu'un point isolé, illisible et donnant l'impression d'un graphique cassé.
+// Une barre par jour reste lisible dès le premier jour, et continue de
+// fonctionner une fois l'usage réel accumulé sur plusieurs jours.
 function buildTimelineSvg(timeline) {
   const width = 600;
   const height = 220;
@@ -108,7 +110,9 @@ function buildTimelineSvg(timeline) {
 
   const n = timeline.length;
   const maxCount = Math.max(1, ...timeline.map((t) => t.count));
-  const xFor = (i) => padLeft + (n === 1 ? innerWidth / 2 : (innerWidth * i) / (n - 1));
+  const slotWidth = innerWidth / n;
+  const barWidth = Math.min(36, slotWidth * 0.5);
+  const xFor = (i) => padLeft + slotWidth * (i + 0.5);
   const yFor = (v) => padTop + innerHeight - (v / maxCount) * innerHeight;
 
   const svgNS = "http://www.w3.org/2000/svg";
@@ -134,29 +138,26 @@ function buildTimelineSvg(timeline) {
     svg.appendChild(axisLabel);
   });
 
-  const linePoints = timeline.map((t, i) => `${xFor(i)},${yFor(t.count)}`).join(" ");
-  const areaPoints = `${xFor(0)},${yFor(0)} ${linePoints} ${xFor(n - 1)},${yFor(0)}`;
-
-  const area = document.createElementNS(svgNS, "polygon");
-  area.setAttribute("points", areaPoints);
-  area.setAttribute("class", "timeline-area");
-  svg.appendChild(area);
-
-  const polyline = document.createElementNS(svgNS, "polyline");
-  polyline.setAttribute("points", linePoints);
-  polyline.setAttribute("class", "timeline-line");
-  svg.appendChild(polyline);
-
   timeline.forEach((t, i) => {
     const x = xFor(i);
-    const y = yFor(t.count);
+    const yTop = yFor(t.count);
 
-    const point = document.createElementNS(svgNS, "circle");
-    point.setAttribute("cx", x);
-    point.setAttribute("cy", y);
-    point.setAttribute("r", 3.5);
-    point.setAttribute("class", "timeline-point");
-    svg.appendChild(point);
+    const bar = document.createElementNS(svgNS, "rect");
+    bar.setAttribute("x", x - barWidth / 2);
+    bar.setAttribute("y", yTop);
+    bar.setAttribute("width", barWidth);
+    bar.setAttribute("height", Math.max(0, padTop + innerHeight - yTop));
+    bar.setAttribute("rx", 3);
+    bar.setAttribute("class", "timeline-bar");
+    svg.appendChild(bar);
+
+    const countLabel = document.createElementNS(svgNS, "text");
+    countLabel.setAttribute("x", x);
+    countLabel.setAttribute("y", yTop - 6);
+    countLabel.setAttribute("class", "timeline-count-label");
+    countLabel.setAttribute("text-anchor", "middle");
+    countLabel.textContent = String(t.count);
+    svg.appendChild(countLabel);
 
     const dateLabel = document.createElementNS(svgNS, "text");
     dateLabel.setAttribute("x", x);
@@ -175,7 +176,10 @@ function renderTimeline(timeline) {
     return el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
   }
-  const block = el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2></div>`);
+  const block = el(`<div class="dashboard-block">
+    <h2>Évolution dans le temps</h2>
+    <p class="block-subtitle">Nombre d'échanges (réplique + réponse IA) analysés par jour.</p>
+  </div>`);
   block.appendChild(buildTimelineSvg(timeline));
   return block;
 }
