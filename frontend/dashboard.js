@@ -101,6 +101,15 @@ function renderCategoryFrequency(categoryFrequency) {
   </div>`);
   const legend = buildModelLegend(models);
   if (legend) block.appendChild(legend);
+  // En-têtes des deux colonnes numériques (effectif, temps moyen) : sans ça,
+  // "15   Ø 1.2 s" à côté d'une barre ne dit pas ce que chaque nombre mesure.
+  block.appendChild(
+    el(`<div class="bar-row freq-header">
+      <div class="bar-track"></div>
+      <div class="bar-count">Effectif</div>
+      <div class="bar-avg-time">Temps moyen</div>
+    </div>`)
+  );
 
   const groupsWrap = document.createElement("div");
   groupsWrap.innerHTML = cats
@@ -113,7 +122,7 @@ function renderCategoryFrequency(categoryFrequency) {
               const count = c.byModel[m] || 0;
               const pct = Math.round((count / maxValue) * 100);
               return `
-                <div class="bar-row bar-row-model">
+                <div class="bar-row bar-row-model" data-tip="${escapeHtml(m)}">
                   <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${modelColor(mi)}"></div></div>
                   <div class="bar-count">${count}</div>
                   <div class="bar-avg-time">${formatResponseTime(c.byModelAvg[m])}</div>
@@ -156,7 +165,7 @@ function renderThemeBreakdown(matrix) {
     (a, b) => Object.values(b[1]).reduce((x, y) => x + y, 0) - Object.values(a[1]).reduce((x, y) => x + y, 0)
   );
   if (themes.length === 0) {
-    return el(`<div class="dashboard-block"><h2>Répartition par thème (joueur)</h2>
+    return el(`<div class="dashboard-block"><h2>Thèmes abordés par les joueurs</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
   }
 
@@ -178,7 +187,7 @@ function renderThemeBreakdown(matrix) {
     })
     .join("");
 
-  return el(`<div class="dashboard-block"><h2>Répartition par thème (joueur)</h2>${rows}</div>`);
+  return el(`<div class="dashboard-block"><h2>Thèmes abordés par les joueurs</h2>${rows}</div>`);
 }
 
 // Regroupe les lignes plates {<keyField>, model, count} de l'API (timeline,
@@ -286,6 +295,13 @@ function buildTimelineSvg(days, models) {
     totalBar.setAttribute("height", Math.max(0, padTop + innerHeight - totalTop));
     totalBar.setAttribute("rx", 2);
     totalBar.setAttribute("class", "timeline-bar-total");
+    // <title> plutôt qu'une infobulle CSS : ce sont des <rect> SVG, pas des
+    // éléments HTML — pas de survol instantané possible ici sans JS de
+    // positionnement dédié. Convenance secondaire (le nom est déjà dans la
+    // légende au-dessus), le délai natif du navigateur est acceptable.
+    const totalTitle = document.createElementNS(svgNS, "title");
+    totalTitle.textContent = `Total : ${day.total}`;
+    totalBar.appendChild(totalTitle);
     svg.appendChild(totalBar);
 
     const totalLabel = document.createElementNS(svgNS, "text");
@@ -309,6 +325,9 @@ function buildTimelineSvg(days, models) {
         bar.setAttribute("rx", 2);
         bar.setAttribute("class", "timeline-model-bar");
         bar.setAttribute("fill", modelColor(mi));
+        const barTitle = document.createElementNS(svgNS, "title");
+        barTitle.textContent = `${m} : ${count}`;
+        bar.appendChild(barTitle);
         svg.appendChild(bar);
       });
     }
@@ -344,15 +363,15 @@ function buildModelLegend(models) {
 
 function renderTimeline(timeline) {
   if (timeline.length === 0) {
-    return el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2>
+    return el(`<div class="dashboard-block"><h2>Nombre d'échanges</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
   }
   const days = pivotByModel(timeline, "date").sort((a, b) => (a.key < b.key ? -1 : 1));
   const models = Array.from(new Set(timeline.map((r) => r.model))).sort();
   const compare = models.length > 1 ? ", barre générale et une barre par modèle" : "";
   const block = el(`<div class="dashboard-block">
-    <h2>Évolution dans le temps</h2>
-    <p class="block-subtitle">Nombre d'échanges (réplique + réponse IA) analysés par jour${compare}.</p>
+    <h2>Nombre d'échanges</h2>
+    <p class="block-subtitle">Réplique + réponse IA analysées par jour${compare}.</p>
   </div>`);
   const legend = buildModelLegend(models);
   if (legend) block.appendChild(legend);

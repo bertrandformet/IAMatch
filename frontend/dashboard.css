@@ -63,8 +63,21 @@
   background: var(--accent);
   border-radius: 6px;
 }
-.bar-row .bar-count { flex: 0 0 32px; text-align: right; color: var(--muted); }
-.bar-row .bar-avg-time { flex: 0 0 56px; text-align: right; color: var(--muted); font-size: 11px; }
+.bar-row .bar-count { flex: 0 0 56px; text-align: right; color: var(--muted); }
+.bar-row .bar-avg-time { flex: 0 0 72px; text-align: right; color: var(--muted); font-size: 11px; }
+
+.freq-header {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.freq-header .bar-count,
+.freq-header .bar-avg-time {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
 
 .freq-group { margin-bottom: 14px; }
 .freq-group:last-child { margin-bottom: 0; }
@@ -72,6 +85,8 @@
 
 .freq-group .bar-row { margin-bottom: 3px; }
 .freq-group .bar-row:last-child { margin-bottom: 0; }
+/* data-tip (nom du modèle) : survol direct sans repasser sur la légende. */
+.freq-group .bar-row-model { cursor: help; }
 .freq-group .bar-row-total .bar-track { height: 14px; }
 .freq-group .bar-row-model .bar-track { height: 7px; }
 .freq-group .bar-row-model .bar-count { font-size: 11px; }

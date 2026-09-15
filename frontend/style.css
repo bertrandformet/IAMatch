@@ -658,19 +658,13 @@ body {
 /* Infobulle en CSS pur (pas l'attribut title natif) : le tooltip natif du
    navigateur impose un délai de hover fixe (~1-1.5s, non réglable en CSS),
    perçu comme trop lent. data-tip + ::after apparaît sans délai, au survol
-   ET au focus clavier (tabindex, sans JS supplémentaire) — role="img" +
+   ET au focus clavier (tabindex, sans JS supplémentaire) — role="img"/
    aria-label gardent l'info accessible aux lecteurs d'écran sans dépendre
-   du survol. */
-.info-icon {
-  position: relative;
-  display: inline-flex;
-  vertical-align: -1px;
-  margin-left: 4px;
-  color: var(--muted);
-  cursor: help;
-}
-.info-icon:hover::after,
-.info-icon:focus-visible::after {
+   du survol. Générique sur [data-tip] : réutilisé au-delà des icônes "i"
+   (ex. barres par modèle du dashboard) plutôt que dupliqué par variante.  */
+[data-tip] { position: relative; }
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
   content: attr(data-tip);
   position: absolute;
   bottom: 100%;
@@ -691,6 +685,13 @@ body {
   z-index: 20;
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.info-icon {
+  display: inline-flex;
+  vertical-align: -1px;
+  margin-left: 4px;
+  color: var(--muted);
+  cursor: help;
 }
 .bar-row .bar-track {
   flex: 1;

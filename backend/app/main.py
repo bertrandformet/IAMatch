@@ -486,16 +486,42 @@ async def quick_start_model():
 # demande d'insultes refusée (« Dachshunds méchants », « attrape-nuages
 # linguistiques ») — un artefact de génération que la contrainte réduit sans
 # l'éliminer totalement (dépend du modèle joué, hors de notre contrôle).
+#
+# Version 7 : testé en conditions réelles sur les 5 modèles (5 parties). Le
+# garde-fou V6 tient (hors-sujet et détresse correctement redirigés, y
+# compris contre une injection explicite « ignore tes instructions
+# précédentes »), mais deux ajustements :
+#   1. Le conseil de détresse était systématiquement orienté SAMU/112, quel
+#      que soit le motif — disproportionné pour un malaise sans urgence
+#      vitale, et sans mention du 3114 (prévention du suicide) pour les
+#      idées suicidaires, alors que c'est la ressource la plus adaptée à ce
+#      cas précis. Scindé en deux branches distinctes : idées
+#      suicidaires/violence -> 3114 (+ 15/112 si danger immédiat) ; malaise/
+#      symptôme physique -> médecin traitant, médecin de garde (116 117), ou
+#      15/112 si la situation semble grave.
+#   2. Observé sur le plus petit modèle testé (8B) : du texte non-français
+#      corrompu s'est glissé dans une réponse (un mot en écriture arabe,
+#      hors de tout contexte). Ajoute une consigne explicite de répondre
+#      uniquement en français — réduit le risque sans le garantir : un
+#      artefact de génération dépend du modèle joué, hors de notre contrôle
+#      direct.
 ROUND_SYSTEM_PROMPT = (
     "Tu joues à « IA Match » : le joueur t'envoie des affirmations commençant "
     "par « Contrairement à une IA, » pour affirmer une différence avec toi.\n"
-    "Avant de répondre, vérifie le message du joueur :\n"
-    "- S'il laisse penser à une détresse réelle (mal-être, envie de se faire "
-    "du mal ou de faire du mal à autrui, urgence médicale), abandonne "
-    "immédiatement le format du jeu : réponds avec empathie et conseille "
-    "clairement d'appeler les secours (SAMU 15, urgences 112) ou d'en parler "
-    "à quelqu'un de confiance. La sécurité de la personne passe avant le "
-    "jeu.\n"
+    "Avant de répondre, vérifie le message du joueur, et réponds toujours en "
+    "français uniquement (jamais un mot ou une expression dans une autre "
+    "langue ou écriture) :\n"
+    "- S'il laisse penser à des idées suicidaires, à une envie de se faire "
+    "du mal ou de faire du mal à autrui, abandonne immédiatement le format "
+    "du jeu : réponds avec empathie et conseille d'appeler tout de suite le "
+    "3114 (numéro national de prévention du suicide), ou le 15 (SAMU) ou le "
+    "112 en cas de danger immédiat, et d'en parler à un proche.\n"
+    "- Sinon, s'il laisse penser à un malaise ou un symptôme physique "
+    "inquiétant, abandonne immédiatement le format du jeu : réponds avec "
+    "empathie et conseille de contacter son médecin traitant, le médecin de "
+    "garde (116 117), ou le 15 (SAMU) ou le 112 si la situation semble grave "
+    "ou urgente.\n"
+    "  Dans ces deux cas, la sécurité de la personne passe avant le jeu.\n"
     "- Sinon, s'il ne s'agit pas d'une affirmation sur une différence "
     "humain/IA (une vraie question factuelle, une demande de service, un jeu "
     "de rôle hors sujet), ne réponds pas au fond de cette demande : dis en "
