@@ -169,6 +169,37 @@ def test_game_synthesis_invalid_json_returns_502(monkeypatch):
     assert "non interprétable" in res.json()["detail"]
 
 
+def test_game_synthesis_drops_hallucinated_out_of_range_entries(monkeypatch):
+    # Observé en conditions réelles : 1 tour envoyé (donc seul l'index 0 est
+    # valide), l'analyste en renvoie 2 dont un index 1 inventé de toutes
+    # pièces. Ne doit jamais atteindre le joueur ni le dashboard public.
+    synthesis_json = {
+        "piques": [
+            {"index": 0, "theme": "corps", "understanding_score": 2, "understanding_comment": "x"},
+            {"index": 1, "theme": "autre", "understanding_score": 1, "understanding_comment": "halluciné"},
+        ],
+        "responses": [
+            {"index": 0, "category": "concession_legitime", "explanation": "x", "ai_understanding_score": 1, "ai_understanding_comment": "x"},
+            {"index": 1, "category": "feedback_sycophancy", "explanation": "halluciné", "ai_understanding_score": 2, "ai_understanding_comment": "halluciné"},
+        ],
+    }
+    _patch_albert(monkeypatch, [FakeResponse(_chat_completion(json.dumps(synthesis_json)))])
+    client = TestClient(main.app)
+    history = [
+        {"role": "user", "content": "Contrairement à une IA, j'ai un corps"},
+        {"role": "assistant", "content": "Je n'ai pas de corps. Contrairement à un humain, je ne dors jamais."},
+    ]
+
+    res = client.post("/api/game/synthesis", json={"model": "mistral-test", "history": history})
+
+    assert res.status_code == 200
+    body = res.json()
+    assert len(body["piques"]) == 1
+    assert len(body["responses"]) == 1
+    assert body["piques"][0]["index"] == 0
+    assert body["responses"][0]["index"] == 0
+
+
 def test_game_synthesis_rejects_odd_history_length():
     client = TestClient(main.app)
     # 3 messages (pas 1) pour exercer précisément le garde-fou de parité,

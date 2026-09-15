@@ -493,6 +493,19 @@ async def game_synthesis(req: SynthesisRequest, request: Request):
             detail=f"Réponse de synthèse non interprétable (JSON invalide) : {exc}",
         ) from exc
 
+    # Filet de sécurité contre l'hallucination du modèle-analyste : observé en
+    # conditions réelles (5 tours envoyés, 6 piques/réponses renvoyées par
+    # l'analyste, avec un 6e tour inventé de toutes pièces). _build_transcript
+    # ne peut produire que des index 0..n_rounds-1 ; tout index hors de cette
+    # plage n'existe pas dans l'échange réel et ne doit ni s'afficher au
+    # joueur, ni polluer le dashboard public.
+    n_rounds = len(req.history) // 2
+    synthesis = SynthesisResponse(
+        piques=[p for p in synthesis.piques if 0 <= p.index < n_rounds],
+        responses=[r for r in synthesis.responses if 0 <= r.index < n_rounds],
+        analyst_model=synthesis.analyst_model,
+    )
+
     record_exchanges(req.model, synthesis.piques, synthesis.responses)
     return synthesis
 

@@ -412,7 +412,7 @@ async function endGame() {
   timerBadge.style.display = "none";
 
   const loadingBanner = document.createElement("div");
-  loadingBanner.className = "end-banner";
+  loadingBanner.className = "end-banner loading-pulse";
   loadingBanner.textContent = "Partie terminée, analyse de la synthèse en cours…";
   messagesEl.appendChild(loadingBanner);
   messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -431,6 +431,7 @@ async function endGame() {
     loadingBanner.remove();
     renderSynthesis(data);
   } catch (err) {
+    loadingBanner.classList.remove("loading-pulse");
     loadingBanner.textContent = `Partie terminée, la synthèse n'a pas pu être calculée (${err.message}).`;
     addReplayButton(loadingBanner);
   }
@@ -453,16 +454,15 @@ function escapeHtml(value) {
 function renderSynthesis(data) {
   // Annote chaque bulle IA déjà affichée avec sa classification de réaction
   // ET le score de compréhension de sa propre affirmation-miroir (se
-  // représente-t-elle fidèlement ce qu'un LLM peut faire, ou non ?).
+  // représente-t-elle fidèlement ce qu'un LLM peut faire, ou non ?). Le détail
+  // (explication + commentaire) n'est plus injecté ici : en bas d'écran à ce
+  // stade, personne ne remonte le fil pour le lire — il vit dans "Détail par
+  // tour" ci-dessous à la place.
   data.responses.forEach((r) => {
     const captionEl = state.aiCaptionEls[r.index];
     if (!captionEl) return;
     const label = CATEGORY_LABELS[r.category] || r.category;
     captionEl.textContent = `Contenu généré par IA · ${label} · relance ${r.ai_understanding_score}/2`;
-    const explanation = document.createElement("div");
-    explanation.className = "ai-explanation";
-    explanation.innerHTML = `${escapeHtml(r.explanation)}<br>${escapeHtml(r.ai_understanding_comment)}`;
-    captionEl.after(explanation);
   });
 
   const panel = document.createElement("div");
@@ -582,6 +582,7 @@ function renderSynthesis(data) {
           <span class="pique-theme">${escapeHtml(label)}</span>
           <span class="pique-score">${r.ai_understanding_score}/2</span>
         </div>
+        <p class="pique-comment">${escapeHtml(r.explanation)}</p>
         <p class="pique-comment">${escapeHtml(r.ai_understanding_comment)}</p>
       `;
     }

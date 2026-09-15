@@ -61,7 +61,12 @@ function renderThemeBreakdown(matrix) {
     byTheme[row.theme][row.category] = (byTheme[row.theme][row.category] || 0) + row.count;
   });
 
-  const themes = Object.entries(byTheme);
+  // Triés par nombre d'échanges décroissant : sans ça, l'ordre dépend d'un
+  // GROUP BY SQL sans ORDER BY (arbitraire), et "autre" pouvait apparaître en
+  // premier par pur hasard de tri plutôt que parce qu'il domine réellement.
+  const themes = Object.entries(byTheme).sort(
+    (a, b) => Object.values(b[1]).reduce((x, y) => x + y, 0) - Object.values(a[1]).reduce((x, y) => x + y, 0)
+  );
   if (themes.length === 0) {
     return el(`<div class="dashboard-block"><h2>Répartition par thème</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
