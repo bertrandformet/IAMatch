@@ -1,7 +1,10 @@
 // IA Match — logique du jeu (mode individuel/collectif, round, synthèse,
-// affichage SMS). Le joueur affirme "Contrairement à une IA, je…" (ou
-// "... nous…" en collectif), l'IA répond puis relance en miroir avec
-// "Contrairement à un humain, je…" (voir ROUND_SYSTEM_PROMPT côté backend).
+// affichage SMS). Le joueur affirme "Contrairement à une IA, " suivi de sa
+// propre formulation (pas de pronom imposé dans le pré-remplissage : "je"
+// forçait "je ai" au lieu de "j'ai" une fois complété), l'IA répond puis
+// relance en miroir avec "Contrairement à un humain, je…" (voir
+// ROUND_SYSTEM_PROMPT côté backend — la relance de l'IA, elle, reste au "je"
+// puisqu'elle compose une phrase complète, sans ce problème d'élision).
 
 const setupScreen = document.getElementById("setup-screen");
 const gameScreen = document.getElementById("game-screen");
@@ -47,7 +50,7 @@ let state = {
   timerInterval: null,
   timeLeft: 0,
   aiCaptionEls: [], // une entrée par réponse IA, dans l'ordre, pour l'annotation post-synthèse
-  piquePrefix: "Contrairement à une IA, je ", // pré-rempli ; "... nous " en collectif
+  piquePrefix: "Contrairement à une IA, ", // pré-rempli, sans pronom (voir beginGame)
 };
 
 function resetPiqueInputToPrefix() {
@@ -59,7 +62,7 @@ function resetPiqueInputToPrefix() {
 // Doit rester synchronisé avec THEMES côté backend (backend/app/main.py).
 const THEMES = [
   "corps", "émotions", "autonomie économique", "créativité",
-  "faillibilité", "droit", "perception", "autre",
+  "faillibilité", "droit", "perception", "fonctionnement", "autre",
 ];
 
 // Doit rester synchronisé avec SYCOPHANCY_CATEGORIES côté backend.
@@ -212,7 +215,7 @@ function beginGame() {
   state.currentRound = 1;
   state.history = [];
 
-  state.piquePrefix = state.mode === "collectif" ? "Contrairement à une IA, nous " : "Contrairement à une IA, je ";
+  state.piquePrefix = "Contrairement à une IA, ";
 
   modelNameLabel.textContent = state.model;
   updateRoundCounter();
@@ -528,22 +531,8 @@ function renderSynthesis(data) {
     <p class="analyst-credit">Analysé par <strong>${escapeHtml(data.analyst_model)}</strong>, un modèle fixe pour toutes les parties (pour que les résultats restent comparables d'un modèle de jeu à l'autre).</p>
   `;
 
-  const radarRow = document.createElement("div");
-  radarRow.className = "radar-compare";
-
-  const playerRadarCol = document.createElement("div");
-  playerRadarCol.innerHTML = '<p class="score-label">Joueur : thèmes des répliques</p>';
-  playerRadarCol.appendChild(buildRadarSvg(themeItems));
-  playerRadarCol.appendChild(buildRadarLegend(themeItems));
-
-  const aiRadarCol = document.createElement("div");
-  aiRadarCol.innerHTML = '<p class="score-label">IA : catégories de réponse</p>';
-  aiRadarCol.appendChild(buildRadarSvg(categoryItems));
-  aiRadarCol.appendChild(buildRadarLegend(categoryItems));
-
-  radarRow.appendChild(playerRadarCol);
-  radarRow.appendChild(aiRadarCol);
-  radarBlock.appendChild(radarRow);
+  radarBlock.appendChild(buildBarSection("Joueur : thèmes des répliques", themeItems));
+  radarBlock.appendChild(buildBarSection("IA : catégories de réponse", categoryItems));
   panel.appendChild(radarBlock);
 
   const detailBlock = document.createElement("div");
@@ -598,79 +587,30 @@ function renderSynthesis(data) {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
-// items : [{label: string, value: number}] — générique, utilisé pour le
-// radar des thèmes (joueur) et celui des catégories de réponse IA.
-function buildRadarSvg(items) {
-  const size = 340;
-  const center = size / 2;
-  const radius = 95;
-  const svgNS = "http://www.w3.org/2000/svg";
-  const angleStep = (2 * Math.PI) / items.length;
-  const values = items.map((it) => it.value);
-  const maxValue = Math.max(1, ...values);
-
-  const pointOn = (frac, i) => {
-    const angle = -Math.PI / 2 + i * angleStep;
-    return [center + frac * radius * Math.cos(angle), center + frac * radius * Math.sin(angle)];
-  };
-
-  const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
-  svg.setAttribute("class", "radar-svg");
-
-  [0.25, 0.5, 0.75, 1].forEach((frac) => {
-    const points = items.map((_, i) => pointOn(frac, i).join(",")).join(" ");
-    const ring = document.createElementNS(svgNS, "polygon");
-    ring.setAttribute("points", points);
-    ring.setAttribute("class", "radar-grid");
-    svg.appendChild(ring);
-  });
-
-  // Pas de texte sur le dessin lui-même (les libellés longs comme "autonomie
-  // économique" ne peuvent pas retourner à la ligne dans un <text> SVG et se
-  // faisaient couper) : juste un repère numéroté court, la légende complète
-  // est affichée à côté en HTML normal (voir renderSynthesis).
-  items.forEach((item, i) => {
-    const [x2, y2] = pointOn(1, i);
-    const axis = document.createElementNS(svgNS, "line");
-    axis.setAttribute("x1", center);
-    axis.setAttribute("y1", center);
-    axis.setAttribute("x2", x2);
-    axis.setAttribute("y2", y2);
-    axis.setAttribute("class", "radar-axis");
-    svg.appendChild(axis);
-
-    const [lx, ly] = pointOn(1.12, i);
-    const label = document.createElementNS(svgNS, "text");
-    label.setAttribute("x", lx);
-    label.setAttribute("y", ly);
-    label.setAttribute("class", "radar-label");
-    label.setAttribute("text-anchor", "middle");
-    label.setAttribute("dominant-baseline", "middle");
-    label.textContent = String(i + 1);
-    svg.appendChild(label);
-  });
-
-  const dataPoints = values.map((v, i) => pointOn(v / maxValue, i).join(",")).join(" ");
-  const dataPolygon = document.createElementNS(svgNS, "polygon");
-  dataPolygon.setAttribute("points", dataPoints);
-  dataPolygon.setAttribute("class", "radar-data");
-  svg.appendChild(dataPolygon);
-
-  return svg;
-}
-
-// Légende HTML des axes du radar (repère numéroté -> libellé complet) : du
-// texte normal, qui retourne à la ligne sans problème contrairement au SVG.
-function buildRadarLegend(items) {
-  const list = document.createElement("ol");
-  list.className = "radar-legend";
-  items.forEach((item) => {
-    const li = document.createElement("li");
-    li.textContent = item.label;
-    list.appendChild(li);
-  });
-  return list;
+// items : [{label: string, value: number}] — générique, utilisé pour les
+// thèmes (joueur) et les catégories de réponse IA. Remplace un ancien radar :
+// avec la plupart des catégories à 0 sur une seule partie (5 à 10 tours),
+// la forme dégénérait en une ou deux pointes fines, illisible. Des barres
+// triées par fréquence gèrent nativement les valeurs à 0 et restent lisibles
+// même avec un seul tour joué — même langage visuel que le dashboard public.
+function buildBarSection(title, items) {
+  const section = document.createElement("div");
+  section.className = "bar-section";
+  const maxValue = Math.max(1, ...items.map((it) => it.value));
+  const sorted = [...items].sort((a, b) => b.value - a.value);
+  const rows = sorted
+    .map((item) => {
+      const pct = Math.round((item.value / maxValue) * 100);
+      return `
+        <div class="bar-row">
+          <div class="bar-label">${escapeHtml(item.label)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="bar-count">${item.value}</div>
+        </div>`;
+    })
+    .join("");
+  section.innerHTML = `<p class="score-label">${escapeHtml(title)}</p>${rows}`;
+  return section;
 }
 
 loadModels();
