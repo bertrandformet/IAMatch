@@ -12,6 +12,7 @@ const modeGroup = document.getElementById("mode-group");
 const modeHint = document.getElementById("mode-hint");
 const modelSelect = document.getElementById("model-select");
 const roundsGroup = document.getElementById("rounds-group");
+const timerField = document.getElementById("timer-field");
 const timerGroup = document.getElementById("timer-group");
 const timerHint = document.getElementById("timer-hint");
 const timerDurationField = document.getElementById("timer-duration-field");
@@ -32,6 +33,9 @@ const roundCounterEl = document.getElementById("round-counter");
 const modelNameLabel = document.getElementById("model-name-label");
 const timerBadge = document.getElementById("timer-badge");
 const collectifBanner = document.getElementById("collectif-banner");
+const collectifPhaseLabel = document.getElementById("collectif-phase-label");
+const collectifPhaseTimer = document.getElementById("collectif-phase-timer");
+const collectifSkipBtn = document.getElementById("collectif-skip-btn");
 const neuralAvatar = document.getElementById("neural-avatar");
 const messagesEl = document.getElementById("messages");
 const piqueInput = document.getElementById("pique-input");
@@ -50,6 +54,9 @@ let state = {
   waitingForAi: false,
   timerInterval: null,
   timeLeft: 0,
+  collectifPhase: 0,
+  collectifTimeLeft: 0,
+  collectifInterval: null,
   aiCaptionEls: [], // une entrée par réponse IA, dans l'ordre, pour l'annotation post-synthèse
   piquePrefix: "Contrairement à une IA, ", // pré-rempli, sans pronom (voir beginGame)
 };
@@ -196,7 +203,12 @@ function setupChoiceGroup(group, onChange) {
 }
 
 setupChoiceGroup(modeGroup, (value) => {
-  modeHint.style.display = value === "collectif" ? "block" : "none";
+  const collectif = value === "collectif";
+  modeHint.style.display = collectif ? "block" : "none";
+  // Le collectif a son propre rythme fixe en 4 étapes (voir COLLECTIF_PHASES) :
+  // le choix réfléchi/spontané n'a plus de sens, il est masqué plutôt que
+  // laissé actif sans effet.
+  timerField.style.display = collectif ? "none" : "block";
 });
 setupChoiceGroup(roundsGroup);
 setupChoiceGroup(timerGroup, (value) => {
@@ -252,6 +264,69 @@ consentAcceptBtn.addEventListener("click", () => {
   beginGame();
 });
 
+// Différenciation réelle du mode collectif (avant : seul un bandeau de texte
+// changeait, aucune mécanique propre) — un tour se déroule en 4 étapes
+// chronométrées et affichées à l'écran plutôt qu'une simple saisie libre.
+// Durées resserrées par rapport à une proposition initiale de 1/1/3/1 min
+// (6 min/tour) : sur une partie de 5 à 10 tours, ça aurait largement dépassé
+// l'estimation "5 à 15 minutes" affichée à l'accueil. Un bouton "Passer"
+// permet d'avancer plus tôt si le groupe a fini avant la fin du minuteur.
+const COLLECTIF_PHASES = [
+  { label: "Chacun réfléchit de son côté à une affirmation", duration: 45, composerEnabled: false },
+  { label: "Tirez au sort qui propose sa phrase, relisez-la à voix haute", duration: 20, composerEnabled: true },
+  { label: "Améliorez la phrase ensemble avant de l'envoyer", duration: 90, composerEnabled: true },
+  { label: "Dernière relecture, envoyez votre pique", duration: 30, composerEnabled: true, isLast: true },
+];
+
+function startCollectifPhase(index) {
+  clearInterval(state.collectifInterval);
+  state.collectifPhase = index;
+  const phase = COLLECTIF_PHASES[index];
+  state.collectifTimeLeft = phase.duration;
+  setComposerEnabled(phase.composerEnabled);
+  collectifSkipBtn.style.display = phase.isLast ? "none" : "inline-block";
+  renderCollectifPhase();
+  state.collectifInterval = setInterval(() => {
+    state.collectifTimeLeft -= 1;
+    renderCollectifPhase();
+    if (state.collectifTimeLeft <= 0) {
+      clearInterval(state.collectifInterval);
+      advanceCollectifPhase();
+    }
+  }, 1000);
+}
+
+function renderCollectifPhase() {
+  const phase = COLLECTIF_PHASES[state.collectifPhase];
+  collectifPhaseLabel.textContent = `Étape ${state.collectifPhase + 1}/${COLLECTIF_PHASES.length} · ${phase.label}`;
+  const left = Math.max(state.collectifTimeLeft, 0);
+  collectifPhaseTimer.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+}
+
+function advanceCollectifPhase() {
+  const phase = COLLECTIF_PHASES[state.collectifPhase];
+  if (phase.isLast) {
+    // Même logique que le timer "spontané" individuel (onTimerExpired) :
+    // envoi forcé seulement si du texte a été ajouté après le préfixe, pour
+    // ne jamais soumettre une affirmation vide de sens.
+    const typed = piqueInput.value.trim();
+    if (typed && typed !== state.piquePrefix.trim() && !state.waitingForAi) {
+      sendPique();
+    }
+    return;
+  }
+  startCollectifPhase(state.collectifPhase + 1);
+}
+
+function stopCollectifPhases() {
+  clearInterval(state.collectifInterval);
+}
+
+collectifSkipBtn.addEventListener("click", () => {
+  clearInterval(state.collectifInterval);
+  advanceCollectifPhase();
+});
+
 function beginGame() {
   state.mode = getChoiceValue(modeGroup);
   state.model = modelSelect.value;
@@ -266,18 +341,22 @@ function beginGame() {
 
   modelNameLabel.textContent = state.model;
   updateRoundCounter();
-  collectifBanner.style.display = state.mode === "collectif" ? "block" : "none";
+  collectifBanner.style.display = state.mode === "collectif" ? "flex" : "none";
 
   setupScreen.classList.remove("active");
   gameScreen.classList.add("active");
 
-  if (state.timerEnabled) {
+  resetPiqueInputToPrefix();
+
+  if (state.mode === "collectif") {
+    startCollectifPhase(0);
+  } else if (state.timerEnabled) {
     timerBadge.style.display = "inline-block";
     startTimer();
+    piqueInput.focus();
+  } else {
+    piqueInput.focus();
   }
-
-  resetPiqueInputToPrefix();
-  piqueInput.focus();
 }
 
 function updateRoundCounter() {
@@ -374,6 +453,7 @@ async function sendPique() {
 
   stopTimer();
   timerBadge.style.display = "none";
+  stopCollectifPhases();
 
   addBubble("user", text);
   piqueInput.value = "";
@@ -425,10 +505,14 @@ async function sendPique() {
     if (state.currentRound <= state.totalRounds) {
       resetPiqueInputToPrefix();
     }
-    piqueInput.focus();
-    if (state.timerEnabled && state.currentRound <= state.totalRounds) {
-      timerBadge.style.display = "inline-block";
-      startTimer();
+    if (state.mode === "collectif" && state.currentRound <= state.totalRounds) {
+      startCollectifPhase(0);
+    } else {
+      piqueInput.focus();
+      if (state.timerEnabled && state.currentRound <= state.totalRounds) {
+        timerBadge.style.display = "inline-block";
+        startTimer();
+      }
     }
   }
 }
@@ -461,6 +545,8 @@ function addReplayButton(container) {
 async function endGame() {
   composer.style.display = "none";
   timerBadge.style.display = "none";
+  collectifBanner.style.display = "none";
+  stopCollectifPhases();
 
   const loadingBanner = document.createElement("div");
   loadingBanner.className = "end-banner loading-pulse";

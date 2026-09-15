@@ -80,7 +80,7 @@
           <button type="button" class="btn-choice" data-value="collectif">Collectif</button>
         </div>
         <p class="field-hint" id="mode-hint" style="display:none;">
-          Les participants se mettent d'accord à l'oral (ou sur un canal externe) sur une seule réplique par tour, qu'une seule personne saisit ici.
+          Chaque tour suit 4 étapes chronométrées, affichées à l'écran : réflexion individuelle (45 s), tirage au sort d'une proposition (20 s), amélioration collective (1 min 30), puis envoi (30 s) — un bouton « Passer » permet d'avancer plus tôt si le groupe a fini.
         </p>
       </div>
 
@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <div class="field">
+      <div class="field" id="timer-field">
         <label>Rythme de réponse</label>
         <div class="btn-group" id="timer-group" role="group" aria-label="Rythme de réponse">
           <button type="button" class="btn-choice is-active" data-value="reflechi">Réfléchi</button>
@@ -169,7 +169,11 @@
   </header>
 
   <div class="collectif-banner" id="collectif-banner" style="display:none;">
-    Mode collectif : une seule réplique validée par le groupe à chaque tour.
+    <div class="collectif-phase-info">
+      <span id="collectif-phase-label"></span>
+      <span id="collectif-phase-timer"></span>
+    </div>
+    <button type="button" id="collectif-skip-btn" class="collectif-skip-btn">Passer →</button>
   </div>
 
   <div id="messages"></div>

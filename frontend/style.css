@@ -397,12 +397,29 @@ body {
 .timer-badge.time-up { background: var(--danger); color: white; }
 
 .collectif-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 8px 16px;
   font-size: 13px;
   color: var(--accent);
   background: #e8f2ff;
   border-bottom: 1px solid var(--border);
 }
+.collectif-phase-info { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+#collectif-phase-timer { font-weight: 700; font-variant-numeric: tabular-nums; }
+.collectif-skip-btn {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.collectif-skip-btn:hover { background: var(--accent); color: white; }
 
 #messages {
   flex: 1;
