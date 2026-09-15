@@ -13,7 +13,7 @@
   <a class="back-link" href="index.html">← Revenir au jeu</a>
   <h1>À propos de l'IA</h1>
   <p class="page-intro">
-    Ce que tu affrontes réellement dans IA Match, en clair.
+    Ce que tu affrontes réellement dans IA Match.
   </p>
 
   <div class="page-block">
@@ -27,8 +27,11 @@
     <p>
       IA Match utilise exclusivement l'<a href="https://albert.api.etalab.gouv.fr" target="_blank" rel="noopener noreferrer">API Albert</a>,
       l'infrastructure d'IA souveraine développée par la DINUM (Direction interministérielle du
-      numérique). Le modèle utilisé dans le jeu est un modèle ouvert (« open weight ») mis à
-      disposition via Albert — Mistral, GPT-OSS ou DeepSeek par exemple. Albert héberge aussi, à côté de ces
+      numérique). Le modèle utilisé dans le jeu est un modèle ouvert open source (dits à poids
+      ouverts ou « open weight ») mis à disposition via Albert. Les modèles actuellement proposés
+      dans le jeu sont <code>openai/gpt-oss-120b</code>, <code>mistral-small-3-2-24b-instruct-2506</code>,
+      <code>deepseek-v4-flash-0731</code> et <code>gemma-4-31b-it</code> — cette liste dépend du
+      catalogue d'Albert à un instant donné et peut évoluer. Albert héberge aussi, à côté de ces
       modèles ouverts, quelques modèles propriétaires réservés aux administrations partenaires ;
       ceux-ci ne sont pas proposés ici.
     </p>
@@ -38,10 +41,9 @@
     <h2>Contenu marqué comme généré par IA</h2>
     <p>
       Chaque bulle affichée à gauche (les réponses de l'IA) est techniquement identifiable comme
-      contenu généré artificiellement : un attribut <code>data-ai-generated="true"</code> dans le
-      code de la page, et une légende visible sous chaque bulle. Ce marquage répond à une
-      obligation légale (règlement européen sur l'IA, Art. 50) : informer que du contenu est
-      généré par une IA, pas le dissimuler.
+      contenu généré artificiellement : une légende visible sous chaque bulle. Ce marquage répond
+      à une obligation légale (règlement européen sur l'IA, Art. 50) : informer que du contenu est
+      généré par une IA et ne pas le dissimuler.
     </p>
   </div>
 

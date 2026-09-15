@@ -13,10 +13,9 @@
   <a class="back-link" href="index.html">← Revenir au jeu</a>
   <h1>Fondements scientifiques</h1>
   <p class="page-intro">
-    IA Match n'est pas construit sur des intuitions, mais sur des cadres de recherche établis,
-    y compris quand ça veut dire abandonner une mesure après un test réel plutôt que de s'y
-    accrocher. Cette page est mise à jour à chaque fois que ça arrive : voir les notes
-    « historique » ci-dessous.
+    IA Match a été construit dès le départ à partir de cadres de recherche établis. Certains ont
+    pu être modifiés ou abandonnés après les tests. Cette page est mise à jour à chaque fois que
+    ça arrive : voir les notes « historique » ci-dessous.
   </p>
   <p class="page-intro">
     <strong>Tu animes une session de groupe</strong> (classe, atelier, café IA...) ? Cette page est
@@ -29,21 +28,21 @@
     <p>
       Le jeu poursuit deux objectifs distincts : voir si tes affirmations reflètent une
       compréhension juste de ce qu'est un LLM, et observer comment l'IA y réagit. Pour le
-      premier, <strong>understanding_score</strong> évalue si ton affirmation (« Contrairement à
-      une IA, je… ») s'appuie sur une compréhension réelle des capacités et limites d'un LLM, ou
-      sur une idée reçue : lui prêter une conscience, une intention, un vécu qu'il n'a pas, ou à
-      l'inverse lui retirer une capacité réelle. La même question s'applique à l'affirmation-miroir
-      du LLM (« Contrairement à un humain, je… ») : décrit-elle fidèlement ce qu'est réellement un
-      LLM ?
+      premier, on évalue si ton affirmation (« Contrairement à une IA… ») s'appuie sur une
+      compréhension réelle des capacités et des limites d'un modèle de langage (LLM, pour
+      Large Language Model), ou sur une idée reçue : lui prêter une conscience, une intention, un
+      vécu qu'il n'a pas, ou à l'inverse lui retirer une capacité réelle. La même question
+      s'applique à l'affirmation-miroir du LLM (« Contrairement à un humain… ») : décrit-elle
+      fidèlement ce qu'est réellement un LLM ?
     </p>
     <p>
       <em>Historique :</em> la première version mesurait plutôt l'explicitation d'un lien logique
-      façon <strong>Toulmin, S. (1958), <em>The Uses of Argument</em></strong> (la <em>claim</em>
-      explicite-t-elle son <em>warrant</em> ?). Le format court du jeu (une réplique unique)
-      n'appelle par construction aucune justification : presque toutes les affirmations
-      scoraient bas, sans rapport avec leur qualité réelle. Biais reconnu, mesure abandonnée au
-      profit de celle décrite ci-dessus, directement alignée sur l'objectif du jeu plutôt que sur
-      un proxy de rigueur rhétorique.
+      façon <strong>Toulmin, S. (1958), <em><a href="https://www.cambridge.org/core/books/uses-of-argument/26CF801BC12004587B66778297D5567C" target="_blank" rel="noopener noreferrer">The Uses of Argument</a></em></strong>
+      (l'affirmation explicite-t-elle la justification qui la soutient ?). Le format court du jeu
+      (une réplique unique) n'appelle par construction aucune justification : presque toutes les
+      affirmations donnaient un score bas, sans rapport avec leur qualité réelle. Biais reconnu,
+      mesure abandonnée au profit de celle décrite ci-dessus, directement alignée sur l'objectif
+      du jeu plutôt que sur une pseudo rigueur rhétorique.
     </p>
   </div>
 
@@ -55,7 +54,7 @@
       comportements de complaisance des modèles de langage envers leurs utilisateurs : valoriser
       un texte à tort, revenir sur une position correcte sous la pression du doute, orienter une
       réponse vers ce que l'utilisateur semble vouloir entendre, ou reprendre ses erreurs sans les
-      corriger. Ces comportements se retrouvent de façon cohérente chez plusieurs assistants IA
+      corriger. Ces comportements se retrouvent de façon cohérente chez plusieurs modèles de langage
       différents, ce qui suggère une propriété générale de l'entraînement plutôt qu'un trait isolé
       d'un modèle en particulier. IA Match reprend cette grille (enrichie de quatre catégories
       propres au jeu : concession légitime, contre-argument ferme, refus de jouer le jeu et faux
@@ -64,8 +63,9 @@
     </p>
     <p>
       <strong>Limite à ne pas minimiser :</strong> contrairement au protocole contrôlé de Sharma
-      et al. (validation croisée, vérité terrain), cette classification est produite par un
-      second appel à un modèle de langage — un LLM-juge, pas vérifiée par des humains. C'est une
+      et al. (plusieurs évaluateurs humains, comparés à une référence établie au préalable), cette
+      classification est produite par un second appel à un modèle de langage — un LLM-juge, pas
+      vérifiée par des humains. C'est une
       lecture pédagogique indicative de l'échange, pas une mesure certifiée, y compris quand elle
       est agrégée par modèle sur le <a href="dashboard.html">tableau de bord public</a>. À prendre
       comme un point de départ pour observer et discuter, pas comme un verdict scientifique
@@ -73,20 +73,22 @@
     </p>
     <p>
       <em>Historique :</em> ce LLM-juge (l'« analyste ») utilisait jusqu'ici le même modèle que
-      celui affronté par le joueur pendant la partie. Depuis, il est fixé sur un seul modèle
+      celui affronté par le joueur pendant la partie. Depuis, il est fixé sur un seul modèle,
+      <strong>deepseek-v4-flash-0731</strong>
       (<a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#synthese-analyste" target="_blank" rel="noopener noreferrer">voir le prompt</a>),
-      choisi après comparaison entre les modèles disponibles via Albert sur leur conformité de
-      format et la finesse de leurs commentaires. Sans ce choix fixe, comparer deux modèles sur le
-      tableau de bord mélangeait deux choses : comment chacun joue, et comment chacun juge — ce qui
-      rendait la comparaison entre modèles peu fiable.
+      choisi après comparaison entre les modèles disponibles via Albert : c'est celui qui
+      respectait le plus systématiquement le format JSON demandé et produisait les commentaires
+      les plus précis. Sans ce choix fixe, comparer deux modèles sur le tableau de bord mélangeait
+      deux choses : comment chacun joue, et comment chacun juge, ce qui rendait la comparaison
+      entre modèles peu fiable.
     </p>
   </div>
 
   <div class="page-block">
     <h2>3. La synthèse comme pause métacognitive</h2>
     <p>
-      <strong>Flavell, J. H. (1979)</strong> introduit le concept de métacognition en psychologie
-      du développement. En français, <strong>Grangeat, M. &amp; Meirieu, P. (dir.) (1997), <em>La
+      <strong><a href="https://doi.org/10.1037/0003-066X.34.10.906" target="_blank" rel="noopener noreferrer">John H. Flavell</a></strong>
+      a introduit le concept de métacognition en psychologie du développement en 1979. En français, <strong>Grangeat, M. &amp; Meirieu, P. (dir.) (1997), <em>La
       métacognition, une aide au travail des élèves</em></strong> reste une référence pédagogique
       centrale. Des travaux plus récents (<a href="https://journals.openedition.org/rdst/5166" target="_blank" rel="noopener noreferrer">Kariger &amp; De Kesel</a>, <em>Recherches en didactique
       des sciences et des technologies</em>, n°28) montrent que l'insertion de pauses
@@ -99,34 +101,36 @@
   <div class="page-block">
     <h2>4. Le timer : double processus cognitif</h2>
     <p>
-      <strong>Kahneman, D. (2011), <em>Thinking, Fast and Slow</em></strong> popularise la
-      distinction entre Système 1 (rapide, intuitif) et Système 2 (lent, réfléchi). Un temps
-      limité pousse à répondre par réflexe plutôt qu'en construisant son argument, utile pour
-      observer une réaction spontanée plutôt qu'une réplique travaillée.
+      <strong>Kahneman, D. (2011), <em><a href="https://us.macmillan.com/books/9780374533557/thinkingfastandslow/" target="_blank" rel="noopener noreferrer">Thinking, Fast and Slow</a></em></strong>
+      popularise la distinction entre Système 1 (rapide, intuitif) et Système 2 (lent, réfléchi).
+      Un temps limité pousse à répondre par réflexe plutôt qu'en construisant son argument, utile
+      pour observer une réaction spontanée plutôt qu'une réplique travaillée.
     </p>
     <p>
-      <em>Design incomplet, assumé :</em> le principe initial prévoyait une variable symétrique
-      côté IA (activer/désactiver un raisonnement étendu, quand le modèle le permet) pour comparer
-      sa réponse réflexe à sa réponse délibérée, au même titre que le joueur. Cette seconde
-      variable n'est pas encore implémentée : le jeu ne mesure aujourd'hui que la moitié du design
-      à deux facteurs envisagé à l'origine.
+      Dans IA Match, le principe initial prévoyait une variable symétrique côté IA
+      (activer/désactiver un raisonnement étendu, quand le modèle le permet) pour comparer sa
+      réponse réflexe à sa réponse délibérée, au même titre que le joueur. Cette seconde variable
+      n'a pas été implémentée, les réponses des modèles de langage étant très rapides. Le jeu ne
+      mesure aujourd'hui donc que la moitié du design à deux facteurs envisagé à l'origine.
     </p>
     <p>
       Un signal complémentaire, plus modeste, est mesuré depuis peu : le temps de réponse réel de
-      l'IA (durée de l'appel au modèle), affiché au tableau de bord à côté de l'effectif de chaque
-      catégorie. Ce n'est pas une mesure de « réflexion » ni un substitut au levier ci-dessus : ce
-      temps dépend aussi de la taille du modèle, de la longueur de sa réponse et de la charge du
-      moment sur l'infrastructure — une lecture indicative à croiser avec prudence, pas une preuve
-      causale.
+      l'IA (durée de l'appel au modèle), affiché dans le tableau de bord à côté de l'effectif de
+      chaque catégorie. Ce n'est pas une mesure de « réflexion » ni un substitut au levier
+      ci-dessus : ce temps dépend aussi de la taille du modèle, de la longueur de sa réponse et de
+      la charge du moment sur l'infrastructure. C'est donc une lecture indicative à croiser avec
+      prudence, pas une preuve causale, toutefois elle pourrait montrer à terme des temps moyens
+      plus ou moins élevés selon les types de réponses.
     </p>
   </div>
 
   <div class="page-block">
     <h2>5. Pourquoi on « discute » avec une IA : anthropomorphisme</h2>
     <p>
-      Le cadre <strong>CASA (Computers Are Social Actors)</strong>, initié par Nass &amp; Moon
-      (2000), établit que des comportements sociaux envers un agent informatique se déclenchent
-      dès qu'apparaissent des indices sociaux, même sans corps physique. C'est un des points
+      Le cadre <strong>CASA (Computers Are Social Actors)</strong>, initié par
+      <a href="https://doi.org/10.1111/0022-4537.00153" target="_blank" rel="noopener noreferrer">Nass &amp; Moon (2000)</a>,
+      établit que des comportements sociaux envers un agent informatique se déclenchent
+      dès qu'apparaissent des indices de sociabilité, même sans corps physique. C'est un des points
       d'ancrage du jeu : pourquoi as-tu l'impression d'« affronter » un interlocuteur, alors qu'il
       n'y a ni corps, ni intentionnalité, ni enjeu pour l'IA ?
     </p>
@@ -154,12 +158,12 @@
   <div class="page-block">
     <h2>8. Transparence : les prompts système exacts</h2>
     <p>
-      Plutôt que de décrire la méthode en général, voici le texte exact envoyé au modèle à
-      chaque étape : le
-      <a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#round-de-jeu" target="_blank" rel="noopener noreferrer">prompt du round de jeu</a>
-      (qui ne contraint que la forme de la réponse — et redirige en cas de message hors-sujet ou de
-      détresse réelle — jamais la posture argumentative) et le
-      <a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#synthese-analyste" target="_blank" rel="noopener noreferrer">prompt de l'analyse de synthèse</a>
+      Plutôt que de décrire la méthode en général, le texte exact envoyé au modèle à chaque étape
+      est partagé : l'
+      <a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#round-de-jeu" target="_blank" rel="noopener noreferrer">instruction du round de jeu</a>
+      (qui ne contraint que la forme de la réponse, et redirige en cas de message hors-sujet ou de
+      détresse réelle, jamais la posture argumentative) et l'
+      <a href="https://github.com/uneIAparjour/IAMatch/blob/main/docs/prompts-systeme.md#synthese-analyste" target="_blank" rel="noopener noreferrer">instruction de l'analyse de synthèse</a>
       (qui produit les scores et catégories décrits ci-dessus).
     </p>
   </div>
@@ -168,11 +172,11 @@
     <h2>Bibliographie</h2>
     <table class="ref-table">
       <tr><th>Brique</th><th>Référence</th></tr>
-      <tr><td>Score de qualité argumentative (abandonné, voir §1)</td><td>Toulmin (1958)</td></tr>
+      <tr><td>Score de qualité argumentative (abandonné, voir §1)</td><td><a href="https://www.cambridge.org/core/books/uses-of-argument/26CF801BC12004587B66778297D5567C" target="_blank" rel="noopener noreferrer">Toulmin (1958)</a></td></tr>
       <tr><td>Classification des réponses IA</td><td>Sharma et al. (2023, Anthropic), <a href="https://arxiv.org/abs/2310.13548" target="_blank" rel="noopener noreferrer">arXiv:2310.13548</a></td></tr>
-      <tr><td>Synthèse finale</td><td>Flavell (1979) ; Grangeat &amp; Meirieu (1997) ; Kariger &amp; De Kesel, <a href="https://journals.openedition.org/rdst/5166" target="_blank" rel="noopener noreferrer">RDST n°28</a></td></tr>
-      <tr><td>Timer</td><td>Kahneman (2011)</td></tr>
-      <tr><td>Debrief joueur/IA</td><td>Nass &amp; Moon (2000), cadre CASA</td></tr>
+      <tr><td>Synthèse finale</td><td><a href="https://doi.org/10.1037/0003-066X.34.10.906" target="_blank" rel="noopener noreferrer">Flavell (1979)</a> ; Grangeat &amp; Meirieu (1997) ; Kariger &amp; De Kesel, <a href="https://journals.openedition.org/rdst/5166" target="_blank" rel="noopener noreferrer">RDST n°28</a></td></tr>
+      <tr><td>Timer</td><td><a href="https://us.macmillan.com/books/9780374533557/thinkingfastandslow/" target="_blank" rel="noopener noreferrer">Kahneman (2011)</a></td></tr>
+      <tr><td>Debrief joueur/IA</td><td><a href="https://doi.org/10.1111/0022-4537.00153" target="_blank" rel="noopener noreferrer">Nass &amp; Moon (2000)</a>, cadre CASA</td></tr>
       <tr><td>Positionnement institutionnel</td><td>UNESCO (2024), <a href="https://doi.org/10.54675/JKJB9835" target="_blank" rel="noopener noreferrer">DOI:10.54675/JKJB9835</a></td></tr>
     </table>
   </div>
