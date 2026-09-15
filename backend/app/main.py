@@ -578,11 +578,16 @@ async def dashboard(model: Optional[str] = None):
             f"SELECT COUNT(*) FROM exchange_records {where_clause}", params
         ).fetchone()[0]
 
+        # Groupé par (catégorie, modèle), comme timeline : quand aucun modèle
+        # n'est filtré, le frontend peut comparer les modèles entre eux par
+        # catégorie (barre générale + barre par modèle), pas seulement une
+        # fréquence agrégée qui les mélange. Trié côté frontend (le tri par
+        # COUNT(*) global n'a plus de sens une fois éclaté par modèle).
         category_frequency = [
-            {"category": row[0], "count": row[1]}
+            {"category": row[0], "model": row[1], "count": row[2]}
             for row in conn.execute(
-                f"SELECT sycophancy_category, COUNT(*) FROM exchange_records {where_clause} "
-                "GROUP BY sycophancy_category ORDER BY COUNT(*) DESC",
+                f"SELECT sycophancy_category, model, COUNT(*) FROM exchange_records {where_clause} "
+                "GROUP BY sycophancy_category, model",
                 params,
             )
         ]

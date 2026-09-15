@@ -65,6 +65,16 @@
 }
 .bar-row .bar-count { flex: 0 0 32px; text-align: right; color: var(--muted); }
 
+.freq-group { margin-bottom: 14px; }
+.freq-group:last-child { margin-bottom: 0; }
+.freq-group-label { font-size: 13px; color: var(--ink); margin-bottom: 4px; }
+
+.freq-group .bar-row { margin-bottom: 3px; }
+.freq-group .bar-row:last-child { margin-bottom: 0; }
+.freq-group .bar-row-total .bar-track { height: 14px; }
+.freq-group .bar-row-model .bar-track { height: 7px; }
+.freq-group .bar-row-model .bar-count { font-size: 11px; }
+
 .theme-breakdown-row {
   padding: 10px 0;
   border-top: 1px solid var(--border);

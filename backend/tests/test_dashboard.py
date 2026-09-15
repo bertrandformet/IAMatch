@@ -86,5 +86,5 @@ def test_dashboard_endpoint_filters_by_model(tmp_path, monkeypatch):
     data = res_filtered.json()
     assert data["selected_model"] == "mistral-small"
     assert data["total_exchanges"] == 1
-    assert data["category_frequency"] == [{"category": "contre_argument_ferme", "count": 1}]
+    assert data["category_frequency"] == [{"category": "contre_argument_ferme", "model": "mistral-small", "count": 1}]
     assert data["theme_category_matrix"] == [{"theme": "corps", "category": "contre_argument_ferme", "count": 1}]

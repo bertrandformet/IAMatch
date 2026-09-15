@@ -68,21 +68,58 @@ function el(html) {
   return div.firstElementChild;
 }
 
+// Barres horizontales (pas un histogramme vertical comme l'évolution dans le
+// temps) : les libellés de catégorie sont des phrases longues ("Dit ce
+// qu'on veut entendre"), qui ne tiendraient pas sous des barres verticales
+// étroites. Barre générale (accent, plus épaisse) par catégorie, puis une
+// barre plus fine par modèle en dessous quand plus d'un modèle est en jeu —
+// même logique de dégénérescence que l'évolution dans le temps.
 function renderCategoryFrequency(categoryFrequency) {
-  const max = Math.max(1, ...categoryFrequency.map((c) => c.count));
-  const rows = categoryFrequency
+  if (categoryFrequency.length === 0) {
+    return el(`<div class="dashboard-block"><h2>Fréquence des réponses IA</h2>
+      <p class="empty-state">Pas encore de données.</p></div>`);
+  }
+  const cats = pivotByModel(categoryFrequency, "category").sort((a, b) => b.total - a.total);
+  const models = Array.from(new Set(categoryFrequency.map((r) => r.model))).sort();
+  const showModelBars = models.length > 1;
+  const maxValue = Math.max(1, ...cats.map((c) => c.total), ...cats.flatMap((c) => Object.values(c.byModel)));
+
+  const block = el(`<div class="dashboard-block"><h2>Fréquence des réponses IA</h2></div>`);
+  const legend = buildModelLegend(models);
+  if (legend) block.appendChild(legend);
+
+  const groupsWrap = document.createElement("div");
+  groupsWrap.innerHTML = cats
     .map((c) => {
-      const label = CATEGORY_LABELS[c.category] || c.category;
-      const pct = Math.round((c.count / max) * 100);
+      const label = CATEGORY_LABELS[c.key] || c.key;
+      const totalPct = Math.round((c.total / maxValue) * 100);
+      const modelRows = showModelBars
+        ? models
+            .map((m, mi) => {
+              const count = c.byModel[m] || 0;
+              const pct = Math.round((count / maxValue) * 100);
+              return `
+                <div class="bar-row bar-row-model">
+                  <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${modelColor(mi)}"></div></div>
+                  <div class="bar-count">${count}</div>
+                </div>`;
+            })
+            .join("")
+        : "";
       return `
-        <div class="bar-row">
-          <div class="bar-label">${escapeHtml(label)}${infoIcon(CATEGORY_DEFINITIONS[c.category])}</div>
-          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-          <div class="bar-count">${c.count}</div>
+        <div class="freq-group">
+          <div class="freq-group-label">${escapeHtml(label)}${infoIcon(CATEGORY_DEFINITIONS[c.key])}</div>
+          <div class="bar-row bar-row-total">
+            <div class="bar-track"><div class="bar-fill" style="width:${totalPct}%"></div></div>
+            <div class="bar-count">${c.total}</div>
+          </div>
+          ${modelRows}
         </div>`;
     })
     .join("");
-  return el(`<div class="dashboard-block"><h2>Fréquence des réponses IA</h2>${rows}</div>`);
+  Array.from(groupsWrap.children).forEach((child) => block.appendChild(child));
+
+  return block;
 }
 
 // Une phrase par thème plutôt qu'un graphique à 2 catégories fixes (l'ancien
@@ -128,18 +165,19 @@ function renderThemeBreakdown(matrix) {
   return el(`<div class="dashboard-block"><h2>Répartition par thème (joueur)</h2>${rows}</div>`);
 }
 
-// Regroupe les lignes plates (date, modèle, count) de l'API en un total par
-// jour + un détail par modèle ce même jour — ordre déjà chronologique côté
-// SQL (ORDER BY d ASC), donc pas besoin de re-trier ici.
-function pivotTimeline(rows) {
-  const byDate = new Map();
+// Regroupe les lignes plates {<keyField>, model, count} de l'API (timeline,
+// category_frequency) en {key, total, byModel} — un total et un détail par
+// modèle pour chaque valeur de keyField (jour, catégorie...).
+function pivotByModel(rows, keyField) {
+  const byKey = new Map();
   rows.forEach((r) => {
-    if (!byDate.has(r.date)) byDate.set(r.date, { date: r.date, total: 0, byModel: {} });
-    const entry = byDate.get(r.date);
+    const k = r[keyField];
+    if (!byKey.has(k)) byKey.set(k, { key: k, total: 0, byModel: {} });
+    const entry = byKey.get(k);
     entry.total += r.count;
     entry.byModel[r.model] = (entry.byModel[r.model] || 0) + r.count;
   });
-  return Array.from(byDate.values());
+  return Array.from(byKey.values());
 }
 
 // Couleur déterministe par modèle (angle doré : bien répartie quel que soit
@@ -242,14 +280,17 @@ function buildTimelineSvg(days, models) {
     dateLabel.setAttribute("y", height - padBottom + 16);
     dateLabel.setAttribute("class", "timeline-label");
     dateLabel.setAttribute("text-anchor", "middle");
-    dateLabel.textContent = day.date.slice(5); // MM-JJ, plus compact que la date complète
+    dateLabel.textContent = day.key.slice(5); // MM-JJ, plus compact que la date complète
     svg.appendChild(dateLabel);
   });
 
   return svg;
 }
 
-function buildTimelineLegend(models) {
+// Légende de couleurs par modèle, réutilisée par l'évolution dans le temps
+// et la fréquence des réponses IA — masquée quand un seul modèle est en jeu
+// (filtre "Modèle" actif, ou données mono-modèle) : rien à comparer.
+function buildModelLegend(models) {
   if (models.length <= 1) return null;
   const legend = document.createElement("div");
   legend.className = "timeline-legend";
@@ -268,14 +309,14 @@ function renderTimeline(timeline) {
     return el(`<div class="dashboard-block"><h2>Évolution dans le temps</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
   }
-  const days = pivotTimeline(timeline);
+  const days = pivotByModel(timeline, "date").sort((a, b) => (a.key < b.key ? -1 : 1));
   const models = Array.from(new Set(timeline.map((r) => r.model))).sort();
   const compare = models.length > 1 ? ", barre générale et une barre par modèle" : "";
   const block = el(`<div class="dashboard-block">
     <h2>Évolution dans le temps</h2>
     <p class="block-subtitle">Nombre d'échanges (réplique + réponse IA) analysés par jour${compare}.</p>
   </div>`);
-  const legend = buildTimelineLegend(models);
+  const legend = buildModelLegend(models);
   if (legend) block.appendChild(legend);
   block.appendChild(buildTimelineSvg(days, models));
   return block;
