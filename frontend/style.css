@@ -78,15 +78,22 @@ body {
 }
 
 /* --- Carrousel de présentation du principe --- */
+/* Survol (peek) de la carte suivante calculé comme 3×padding - gap (voir
+   calcul exact avant/après en commentaire de commit) : à 32px de padding,
+   la carte 1 laissait dépasser 84px de la carte 2 au repos — près de la
+   moitié de sa largeur, pas un simple indice de défilement. Ramené à 16px,
+   ce dépassement tombe à 36px, une bien meilleure proportion, quelle que
+   soit la largeur d'écran (le ratio ne dépend que de ces constantes, pas de
+   la largeur du conteneur). */
 .intro-carousel {
   display: flex;
   gap: 12px;
   overflow-x: auto;
   overflow-anchor: none;
   scroll-snap-type: x mandatory;
-  scroll-padding-inline: 32px;
-  margin: 0 -32px 14px;
-  padding: 0 32px 4px;
+  scroll-padding-inline: 16px;
+  margin: 0 -16px 14px;
+  padding: 0 16px 4px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -94,7 +101,7 @@ body {
 .intro-carousel::-webkit-scrollbar { display: none; }
 
 .intro-card {
-  flex: 0 0 calc(100% - 64px);
+  flex: 0 0 calc(100% - 32px);
   scroll-snap-align: center;
   background: var(--card);
   border: 1px solid var(--border);
