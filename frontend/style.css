@@ -654,6 +654,14 @@ body {
 }
 .bar-row:last-child { margin-bottom: 0; }
 .bar-row .bar-label { flex: 0 0 40%; color: var(--ink); }
+
+.info-icon {
+  display: inline-flex;
+  vertical-align: -1px;
+  margin-left: 4px;
+  color: var(--muted);
+  cursor: help;
+}
 .bar-row .bar-track {
   flex: 1;
   background: var(--bg);
