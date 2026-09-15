@@ -73,6 +73,7 @@ def _isolate_rate_limits(monkeypatch, tmp_path):
     monkeypatch.setattr(main, "_rate_limit_buckets", defaultdict(deque))
     monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
     monkeypatch.setattr(main, "ALBERT_API_KEY", "test-key")
+    monkeypatch.setattr(main, "_quick_start_index", 0)
 
 
 def test_play_round_success(monkeypatch):
@@ -106,6 +107,30 @@ def test_play_round_rate_limit(monkeypatch):
 
     assert statuses[:20] == [200] * 20
     assert statuses[20] == 429
+
+
+def test_quick_start_model_rotates(monkeypatch):
+    models_payload = {
+        "data": [
+            {"id": "model-a", "type": "text-generation"},
+            {"id": "model-b", "type": "text-generation"},
+        ]
+    }
+    _patch_albert(monkeypatch, [FakeResponse(models_payload) for _ in range(3)])
+    client = TestClient(main.app)
+
+    picks = [client.post("/api/quick-start-model").json()["model"] for _ in range(3)]
+
+    assert picks == ["model-a", "model-b", "model-a"]
+
+
+def test_quick_start_model_no_models_returns_502(monkeypatch):
+    _patch_albert(monkeypatch, [FakeResponse({"data": []})])
+    client = TestClient(main.app)
+
+    res = client.post("/api/quick-start-model")
+
+    assert res.status_code == 502
 
 
 def test_game_synthesis_success(monkeypatch):

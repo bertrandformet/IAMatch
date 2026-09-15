@@ -345,6 +345,18 @@ def _filter_chat_models(data: list[dict]) -> list[dict]:
     return models
 
 
+async def _fetch_albert_raw_models() -> list[dict]:
+    async with httpx.AsyncClient(headers=albert_headers(), timeout=15) as client:
+        try:
+            resp = await client.get(f"{ALBERT_BASE_URL}/models")
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(status_code=502, detail=f"Erreur API Albert : {exc.response.text}") from exc
+        except httpx.RequestError as exc:
+            raise HTTPException(status_code=502, detail=f"API Albert injoignable : {exc}") from exc
+    return resp.json().get("data", [])
+
+
 @app.get("/api/models")
 async def list_models(raw: bool = False):
     """Liste les modèles Albert disponibles pour la clé configurée, pour peupler
@@ -355,19 +367,35 @@ async def list_models(raw: bool = False):
     qui varie selon le déploiement Albert et n'est pas garanti par une doc
     stable à ce jour.
     """
-    async with httpx.AsyncClient(headers=albert_headers(), timeout=15) as client:
-        try:
-            resp = await client.get(f"{ALBERT_BASE_URL}/models")
-            resp.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            raise HTTPException(status_code=502, detail=f"Erreur API Albert : {exc.response.text}") from exc
-        except httpx.RequestError as exc:
-            raise HTTPException(status_code=502, detail=f"API Albert injoignable : {exc}") from exc
-
-    data = resp.json().get("data", [])
+    data = await _fetch_albert_raw_models()
     if raw:
         return {"data": data}
     return {"models": _filter_chat_models(data)}
+
+
+# Compteur de rotation pour "Partie rapide" — en mémoire, comme
+# _rate_limit_buckets (remis à zéro à chaque redémarrage, ce qui est
+# acceptable ici : l'objectif est d'éviter un biais structurel vers le
+# premier modèle de la liste, pas une garantie d'équirépartition exacte).
+_quick_start_index = 0
+
+
+@app.post("/api/quick-start-model")
+async def quick_start_model():
+    """Modèle assigné à une « Partie rapide » (le joueur n'en choisit pas).
+    Sans rotation, ce serait toujours le premier modèle de la liste Albert,
+    biaisant structurellement le dashboard public vers un seul modèle — à
+    l'opposé de son but, qui est justement de comparer les modèles entre
+    eux. Chaque appel avance d'un cran, en boucle sur la liste courante."""
+    global _quick_start_index
+    data = await _fetch_albert_raw_models()
+    models = _filter_chat_models(data)
+    if not models:
+        raise HTTPException(status_code=502, detail="Aucun modèle disponible.")
+
+    model = models[_quick_start_index % len(models)]["id"]
+    _quick_start_index += 1
+    return {"model": model}
 
 
 # Round de jeu — system prompt de FORMAT uniquement, décidé en cours de

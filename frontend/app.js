@@ -190,8 +190,26 @@ customizeToggle.addEventListener("click", () => {
 // la pop-up d'information/consentement (interaction avec une IA, rappel
 // anti-données sensibles, anonymisation) : la partie ne démarre réellement
 // qu'à l'acceptation explicite. Sans accord, pas de jeu.
-quickStartBtn.addEventListener("click", () => {
-  consentModal.style.display = "flex";
+//
+// « Partie rapide » ne laisse pas le joueur choisir de modèle : sans
+// rotation, ce serait toujours le premier de la liste, biaisant
+// structurellement le dashboard public vers un seul modèle. Le serveur
+// attribue le modèle (rotation globale, voir /api/quick-start-model) avant
+// l'ouverture de la pop-up.
+quickStartBtn.addEventListener("click", async () => {
+  quickStartBtn.disabled = true;
+  try {
+    const res = await fetch("/api/quick-start-model", { method: "POST" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    modelSelect.value = data.model;
+    consentModal.style.display = "flex";
+  } catch (err) {
+    setupError.textContent = `Impossible d'assigner un modèle pour la partie rapide (${err.message}).`;
+    setupError.style.display = "block";
+  } finally {
+    quickStartBtn.disabled = false;
+  }
 });
 startBtn.addEventListener("click", () => {
   consentModal.style.display = "flex";
