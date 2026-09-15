@@ -20,7 +20,9 @@ Projet [Une IA par jour](https://uneiaparjour.fr).
    l'échange après coup : thème et score de compréhension des LLM de chaque affirmation,
    catégorie de réaction de l'IA (inspirée de la recherche sur la sycophantie des LLM, voir
    [Fondements](frontend/fondements.html), qui documente aussi les limites méthodologiques de
-   cette classification).
+   cette classification). Ce second appel utilise un modèle fixe (`ANALYST_MODEL`), indépendant
+   du modèle de jeu choisi par le joueur, pour que les comparaisons entre modèles sur le dashboard
+   ne mélangent pas comment un modèle joue et comment il juge.
 4. **Dashboard public** : les échanges anonymisés (thème + score + catégorie, jamais le texte)
    alimentent un tableau de bord agrégé, filtrable par modèle.
 

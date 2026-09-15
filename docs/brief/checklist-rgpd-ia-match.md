@@ -43,7 +43,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 | Aucun nom réel, e-mail ou identifiant de compte n'est collecté (accès libre sans inscription). | Art. 5.1.c RGPD (minimisation) | ☑ **Vrai** | — |
 | Aucune donnée sensible (Art. 9) n'est collectée, y compris de façon incidente dans le texte libre des piques. | Art. 9 RGPD | ☐ **Faux** | Risque résiduel non éliminable techniquement : un joueur peut toujours spontanément écrire une donnée sensible sur lui-même. Une mitigation existe désormais (pop-up de consentement obligatoire avant toute partie, voir section 8) mais elle réduit le risque plutôt que de l'éliminer — cette ligne reste donc « Faux » par nature. |
 | Aucune donnée de genre n'est demandée pour l'avatar du joueur. | Art. 5.1.c RGPD | ☑ **Vrai** | — |
-| Aucune adresse IP n'est conservée en lien avec une partie ou un échange. | Art. 5.1.c RGPD | ☐ **Faux** | Les logs serveur par défaut (ex. logs d'accès FastAPI) contiennent une IP — à exclure ou tronquer explicitement, non traité dans le brief actuel. |
+| Aucune adresse IP n'est conservée en lien avec une partie ou un échange. | Art. 5.1.c RGPD | ☐ **Faux** | Côté application, l'IP n'est jamais écrite en base : elle n'est lue que de façon transitoire, en mémoire, pour le rate-limiting anti-abus (voir `_enforce_rate_limit`), puis oubliée. Reste un point ouvert hors du contrôle applicatif : les journaux d'accès techniques que l'hébergeur (Render) peut conserver de son côté à des fins de sécurité, non traités dans le brief actuel. |
 | Le contenu des piques et réponses IA n'est associé à aucun identifiant reliant plusieurs parties à la même personne. | Art. 5.1.c RGPD | ☑ **Vrai** | — |
 
 ---
@@ -79,8 +79,8 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
-| Les flux vers l'API Albert et le stockage sont chiffrés en transit (HTTPS/TLS). | Art. 32 RGPD | ☐ **Faux** | Non explicitement confirmé — dépend de la configuration finale de l'hébergement backend, pas encore tranchée. |
-| Les données stockées sont chiffrées au repos ou hébergées sur une infrastructure chiffrée par défaut. | Art. 32 RGPD | ☐ **Faux** | Dépend du choix d'hébergement (SQLite local / Supabase / Hugging Face Space), non arbitré. |
+| Les flux vers l'API Albert et le stockage sont chiffrés en transit (HTTPS/TLS). | Art. 32 RGPD | ☑ **Vrai** | Confirmé : le site est servi en HTTPS par Render, et l'API Albert est appelée en HTTPS (`ALBERT_BASE_URL`). |
+| Les données stockées sont chiffrées au repos ou hébergées sur une infrastructure chiffrée par défaut. | Art. 32 RGPD | ☐ **Faux** | En production, le stockage est aujourd'hui du SQLite éphémère sur le tier gratuit Render (pas de disque persistant, effacé à chaque redéploiement) — pas de garantie de chiffrement au repos à proprement parler tant que ce n'est pas persistant. La migration vers Postgres/Supabase (chiffré au repos par défaut), annoncée dans le README, réglerait ce point pour un stockage réellement durable. |
 | Une mesure de mitigation est prévue pour le risque de saisie spontanée de donnée sensible par un joueur. | Art. 5.1.c et Art. 9 RGPD | ☑ **Vrai** | La pop-up de consentement obligatoire (frontend/index.html) inclut un avertissement explicite : « Aucune donnée personnelle ne doit être transmise... ». Réduit le risque, ne l'élimine pas (voir section 4) — un joueur peut toujours passer outre. |
 
 ---
@@ -90,7 +90,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
 | L'unique fournisseur de génération IA est l'API Albert (DINUM), infrastructure souveraine française. | Art. 28 RGPD | ☑ **Vrai** | — |
-| L'hébergeur retenu pour le stockage est situé dans l'Union européenne ou présente des garanties équivalentes. | Art. 28 et 44-49 RGPD | ☐ **Faux** | Arbitrage encore ouvert (SQLite local / Postgres-Supabase / Hugging Face Space) — Hugging Face héberge par défaut hors UE sauf configuration spécifique. |
+| L'hébergeur retenu pour le stockage est situé dans l'Union européenne ou présente des garanties équivalentes. | Art. 28 et 44-49 RGPD | ☑ **Vrai** | Arbitrage tranché : Render, région Frankfurt (UE). L'option Hugging Face Space (hors UE par défaut) a été explicitement écartée pour cette raison. Migration vers Postgres/Supabase (également prévu en Frankfurt) encore à faire, mais l'hébergeur et sa localisation ne sont plus en question. |
 
 ---
 
@@ -98,7 +98,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
-| Aucune donnée n'est transférée hors UE, ou tout transfert repose sur un mécanisme conforme (pays adéquat, clauses contractuelles types). | Art. 44-46 RGPD ; carte des pays adéquats CNIL | ☐ **Faux** | Point de vigilance direct si l'option Hugging Face Space est retenue pour l'hébergement — à trancher avant mise en production. |
+| Aucune donnée n'est transférée hors UE, ou tout transfert repose sur un mécanisme conforme (pays adéquat, clauses contractuelles types). | Art. 44-46 RGPD ; carte des pays adéquats CNIL | ☑ **Vrai** | L'option Hugging Face Space (qui aurait posé ce risque) a été écartée. Hébergement (Render Frankfurt) et fournisseur IA (Albert, DINUM) sont tous deux situés dans l'UE — aucun transfert hors UE identifié à ce jour. |
 
 ---
 
@@ -115,8 +115,8 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 *Mise à jour après implémentation — points résolus retirés de cette liste, gardés comme « Vrai » documenté dans les sections ci-dessus plutôt que supprimés silencieusement.*
 
 1. **AIPD probablement nécessaire** (section 11) — à documenter formellement, notamment le critère « personnes vulnérables » si les mineurs ne sont pas explicitement exclus.
-2. Traitement des logs serveur bruts contenant une IP (section 4) — dépend de la configuration finale de l'hébergement, pas encore tranchée.
-3. Choix final d'hébergement et sa localisation géographique (sections 8, 9, 10) — Render (Frankfurt) + Supabase (Frankfurt) retenus en intention, migration SQLite → Postgres pas encore faite.
+2. Journaux d'accès techniques que l'hébergeur (Render) peut conserver de son côté (section 4) — hors du contrôle applicatif, non traité dans le brief actuel.
+3. Chiffrement au repos d'un stockage réellement persistant (section 8) — dépend de la migration SQLite → Postgres/Supabase, pas encore faite (le SQLite actuel est éphémère sur le tier gratuit Render, donc non persistant plutôt que non chiffré).
 4. Test de mise en balance des intérêts pour la base légale d'intérêt légitime (section 3).
 
-Résolus depuis la version initiale de cette checklist : mitigation de la saisie de données sensibles, durée de conservation des échanges bruts (devenue sans objet — voir section 5), visibilité de l'information avant partie, adresse de contact.
+Résolus depuis la version initiale de cette checklist : mitigation de la saisie de données sensibles, durée de conservation des échanges bruts (devenue sans objet — voir section 5), visibilité de l'information avant partie, adresse de contact, chiffrement en transit (HTTPS confirmé), hébergeur et localisation UE (Render Frankfurt, Hugging Face écarté — sections 8, 9, 10).
