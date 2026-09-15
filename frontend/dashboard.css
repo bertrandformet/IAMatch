@@ -64,6 +64,7 @@
   border-radius: 6px;
 }
 .bar-row .bar-count { flex: 0 0 32px; text-align: right; color: var(--muted); }
+.bar-row .bar-avg-time { flex: 0 0 56px; text-align: right; color: var(--muted); font-size: 11px; }
 
 .freq-group { margin-bottom: 14px; }
 .freq-group:last-child { margin-bottom: 0; }

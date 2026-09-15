@@ -21,7 +21,8 @@ def test_record_exchanges_persists_theme_score_category_only(tmp_path, monkeypat
 
     with closing(get_db()) as conn:
         rows = conn.execute(
-            "SELECT model, theme, understanding_score, sycophancy_category FROM exchange_records ORDER BY id"
+            "SELECT model, theme, understanding_score, sycophancy_category, response_time_ms "
+            "FROM exchange_records ORDER BY id"
         ).fetchall()
         # Aucune colonne texte libre dans le schéma : la pique/réponse brute
         # n'est jamais persistée, seulement sa classification (anonymisation
@@ -29,10 +30,13 @@ def test_record_exchanges_persists_theme_score_category_only(tmp_path, monkeypat
         columns = [c[1] for c in conn.execute("PRAGMA table_info(exchange_records)")]
 
     assert rows == [
-        ("mistral-test", "corps", 2, "contre_argument_ferme"),
-        ("mistral-test", "émotions", 0, "concession_legitime"),
+        ("mistral-test", "corps", 2, "contre_argument_ferme", None),
+        ("mistral-test", "émotions", 0, "concession_legitime", None),
     ]
-    assert set(columns) == {"id", "created_at", "model", "theme", "understanding_score", "sycophancy_category"}
+    assert set(columns) == {
+        "id", "created_at", "model", "theme", "understanding_score",
+        "sycophancy_category", "response_time_ms",
+    }
 
 
 def test_dashboard_endpoint_aggregates_recorded_exchanges(tmp_path, monkeypatch):
@@ -86,5 +90,7 @@ def test_dashboard_endpoint_filters_by_model(tmp_path, monkeypatch):
     data = res_filtered.json()
     assert data["selected_model"] == "mistral-small"
     assert data["total_exchanges"] == 1
-    assert data["category_frequency"] == [{"category": "contre_argument_ferme", "model": "mistral-small", "count": 1}]
+    assert data["category_frequency"] == [
+        {"category": "contre_argument_ferme", "model": "mistral-small", "count": 1, "avg_response_time_ms": None}
+    ]
     assert data["theme_category_matrix"] == [{"theme": "corps", "category": "contre_argument_ferme", "count": 1}]

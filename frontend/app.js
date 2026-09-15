@@ -46,6 +46,7 @@ let state = {
   timerDuration: 30,
   currentRound: 0,
   history: [], // [{role: "user"|"assistant", content: string}]
+  responseTimesMs: [], // temps de réponse Albert par round (index 0-based, aligné sur history/2)
   waitingForAi: false,
   timerInterval: null,
   timeLeft: 0,
@@ -259,6 +260,7 @@ function beginGame() {
   state.timerDuration = parseInt(timerDurationInput.value, 10) || 30;
   state.currentRound = 1;
   state.history = [];
+  state.responseTimesMs = [];
 
   state.piquePrefix = "Contrairement à une IA, ";
 
@@ -404,6 +406,7 @@ async function sendPique() {
 
     state.history.push({ role: "user", content: text });
     state.history.push({ role: "assistant", content: data.reply });
+    state.responseTimesMs.push(data.response_time_ms);
 
     state.currentRound += 1;
     updateRoundCounter();
@@ -469,7 +472,11 @@ async function endGame() {
     const res = await fetch("/api/game/synthesis", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ model: state.model, history: state.history }),
+      body: JSON.stringify({
+        model: state.model,
+        history: state.history,
+        response_times_ms: state.responseTimesMs,
+      }),
     });
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
@@ -499,13 +506,14 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-// Petite icône "i" avec la définition en infobulle native (attribut title) :
-// aucun JS supplémentaire, fonctionne partout, y compris au clavier/lecteur
-// d'écran. Limite connue : sur mobile, sans souris, la découvrabilité au
-// survol est plus faible (appui long selon le navigateur).
+// Petite icône "i" avec la définition en infobulle CSS pure (data-tip +
+// ::after dans style.css) : apparition instantanée au survol/focus, contrairement
+// à l'attribut title natif dont le délai de hover n'est pas réglable — c'est
+// justement ce qui était reproché. tabindex + aria-label gardent l'accès au
+// clavier et aux lecteurs d'écran, sans JS supplémentaire.
 function infoIcon(definition) {
   if (!definition) return "";
-  return `<span class="info-icon" title="${escapeHtml(definition)}"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><line x1="8" y1="7.2" x2="8" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="4.8" r="0.9" fill="currentColor"/></svg></span>`;
+  return `<span class="info-icon" data-tip="${escapeHtml(definition)}" tabindex="0" role="img" aria-label="${escapeHtml(definition)}"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><line x1="8" y1="7.2" x2="8" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="4.8" r="0.9" fill="currentColor"/></svg></span>`;
 }
 
 function renderSynthesis(data) {

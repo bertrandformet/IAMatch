@@ -53,19 +53,31 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-// Petite icône "i" avec la définition en infobulle native (attribut title) :
-// aucun JS supplémentaire, fonctionne partout, y compris au clavier/lecteur
-// d'écran. Limite connue : sur mobile, sans souris, la découvrabilité au
-// survol est plus faible (appui long selon le navigateur).
+// Petite icône "i" avec la définition en infobulle CSS pure (data-tip +
+// ::after dans style.css) : apparition instantanée au survol/focus, contrairement
+// à l'attribut title natif dont le délai de hover n'est pas réglable — c'est
+// justement ce qui était reproché. tabindex + aria-label gardent l'accès au
+// clavier et aux lecteurs d'écran, sans JS supplémentaire.
 function infoIcon(definition) {
   if (!definition) return "";
-  return `<span class="info-icon" title="${escapeHtml(definition)}"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><line x1="8" y1="7.2" x2="8" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="4.8" r="0.9" fill="currentColor"/></svg></span>`;
+  return `<span class="info-icon" data-tip="${escapeHtml(definition)}" tabindex="0" role="img" aria-label="${escapeHtml(definition)}"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><line x1="8" y1="7.2" x2="8" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="4.8" r="0.9" fill="currentColor"/></svg></span>`;
 }
 
 function el(html) {
   const div = document.createElement("div");
   div.innerHTML = html.trim();
   return div.firstElementChild;
+}
+
+// Temps de réponse Albert (durée de l'appel, mesurée côté serveur à chaque
+// round) : lecture indicative, pas causale — la durée dépend aussi de la
+// taille du modèle, de la longueur de la réponse générée et de la charge du
+// moment sur Albert, pas seulement d'une éventuelle "délibération" (voir
+// Fondements §4). null quand aucun échange chronométré n'est encore présent
+// dans ce groupe (donnée ajoutée après coup, ou round non mesuré).
+function formatResponseTime(ms) {
+  if (ms == null) return "";
+  return ms >= 1000 ? `Ø ${(ms / 1000).toFixed(1)} s` : `Ø ${Math.round(ms)} ms`;
 }
 
 // Barres horizontales (pas un histogramme vertical comme l'évolution dans le
@@ -79,12 +91,14 @@ function renderCategoryFrequency(categoryFrequency) {
     return el(`<div class="dashboard-block"><h2>Fréquence des réponses IA</h2>
       <p class="empty-state">Pas encore de données.</p></div>`);
   }
-  const cats = pivotByModel(categoryFrequency, "category").sort((a, b) => b.total - a.total);
+  const cats = pivotByModel(categoryFrequency, "category", "avg_response_time_ms").sort((a, b) => b.total - a.total);
   const models = Array.from(new Set(categoryFrequency.map((r) => r.model))).sort();
   const showModelBars = models.length > 1;
   const maxValue = Math.max(1, ...cats.map((c) => c.total), ...cats.flatMap((c) => Object.values(c.byModel)));
 
-  const block = el(`<div class="dashboard-block"><h2>Fréquence des réponses IA</h2></div>`);
+  const block = el(`<div class="dashboard-block"><h2>Fréquence des réponses IA</h2>
+    <p class="block-subtitle">Temps de réponse moyen de l'IA à côté de chaque effectif — une lecture indicative, pas une mesure de « réflexion » (dépend aussi de la taille du modèle et de la longueur de sa réponse).</p>
+  </div>`);
   const legend = buildModelLegend(models);
   if (legend) block.appendChild(legend);
 
@@ -102,6 +116,7 @@ function renderCategoryFrequency(categoryFrequency) {
                 <div class="bar-row bar-row-model">
                   <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${modelColor(mi)}"></div></div>
                   <div class="bar-count">${count}</div>
+                  <div class="bar-avg-time">${formatResponseTime(c.byModelAvg[m])}</div>
                 </div>`;
             })
             .join("")
@@ -112,6 +127,7 @@ function renderCategoryFrequency(categoryFrequency) {
           <div class="bar-row bar-row-total">
             <div class="bar-track"><div class="bar-fill" style="width:${totalPct}%"></div></div>
             <div class="bar-count">${c.total}</div>
+            <div class="bar-avg-time">${formatResponseTime(c.avg)}</div>
           </div>
           ${modelRows}
         </div>`;
@@ -168,16 +184,38 @@ function renderThemeBreakdown(matrix) {
 // Regroupe les lignes plates {<keyField>, model, count} de l'API (timeline,
 // category_frequency) en {key, total, byModel} — un total et un détail par
 // modèle pour chaque valeur de keyField (jour, catégorie...).
-function pivotByModel(rows, keyField) {
+//
+// avgField optionnel (ex. "avg_response_time_ms") : chaque ligne porte déjà
+// la moyenne exacte pour son (keyField, model) — reprise telle quelle dans
+// byModelAvg. Pour la barre "total" (tous modèles confondus), une moyenne de
+// moyennes serait fausse dès que les groupes n'ont pas le même effectif :
+// pondérée par count (avg * count = somme des temps de ce groupe), le ratio
+// somme/effectif total redonne la moyenne exacte, pas une approximation.
+function pivotByModel(rows, keyField, avgField) {
   const byKey = new Map();
   rows.forEach((r) => {
     const k = r[keyField];
-    if (!byKey.has(k)) byKey.set(k, { key: k, total: 0, byModel: {} });
+    if (!byKey.has(k)) {
+      byKey.set(k, { key: k, total: 0, byModel: {}, byModelAvg: {}, avg: null, _avgSum: 0, _avgCount: 0 });
+    }
     const entry = byKey.get(k);
     entry.total += r.count;
     entry.byModel[r.model] = (entry.byModel[r.model] || 0) + r.count;
+    if (avgField) {
+      const avg = r[avgField];
+      entry.byModelAvg[r.model] = avg;
+      if (avg != null) {
+        entry._avgSum += avg * r.count;
+        entry._avgCount += r.count;
+      }
+    }
   });
-  return Array.from(byKey.values());
+  return Array.from(byKey.values()).map((entry) => {
+    entry.avg = entry._avgCount > 0 ? entry._avgSum / entry._avgCount : null;
+    delete entry._avgSum;
+    delete entry._avgCount;
+    return entry;
+  });
 }
 
 // Couleur déterministe par modèle (angle doré : bien répartie quel que soit
@@ -280,7 +318,7 @@ function buildTimelineSvg(days, models) {
     dateLabel.setAttribute("y", height - padBottom + 16);
     dateLabel.setAttribute("class", "timeline-label");
     dateLabel.setAttribute("text-anchor", "middle");
-    dateLabel.textContent = day.key.slice(5); // MM-JJ, plus compact que la date complète
+    dateLabel.textContent = `${day.key.slice(8, 10)}/${day.key.slice(5, 7)}`; // JJ/MM (format français), plus compact que la date complète
     svg.appendChild(dateLabel);
   });
 

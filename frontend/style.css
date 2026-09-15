@@ -655,12 +655,42 @@ body {
 .bar-row:last-child { margin-bottom: 0; }
 .bar-row .bar-label { flex: 0 0 40%; color: var(--ink); }
 
+/* Infobulle en CSS pur (pas l'attribut title natif) : le tooltip natif du
+   navigateur impose un délai de hover fixe (~1-1.5s, non réglable en CSS),
+   perçu comme trop lent. data-tip + ::after apparaît sans délai, au survol
+   ET au focus clavier (tabindex, sans JS supplémentaire) — role="img" +
+   aria-label gardent l'info accessible aux lecteurs d'écran sans dépendre
+   du survol. */
 .info-icon {
+  position: relative;
   display: inline-flex;
   vertical-align: -1px;
   margin-left: 4px;
   color: var(--muted);
   cursor: help;
+}
+.info-icon:hover::after,
+.info-icon:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: normal;
+  width: max-content;
+  max-width: 220px;
+  text-align: left;
+  z-index: 20;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .bar-row .bar-track {
   flex: 1;

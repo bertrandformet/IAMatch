@@ -86,6 +86,8 @@ def test_play_round_success(monkeypatch):
     assert res.json()["reply"] == "Contrairement à un humain, je ne dors jamais."
     # Le system prompt de format doit toujours être en tête des messages envoyés.
     assert fake.sent_payloads[0]["messages"][0]["role"] == "system"
+    # Chronométré côté serveur (durée de l'appel Albert), toujours présent.
+    assert res.json()["response_time_ms"] >= 0
 
 
 def test_play_round_network_error_returns_502(monkeypatch):
@@ -223,6 +225,33 @@ def test_game_synthesis_drops_hallucinated_out_of_range_entries(monkeypatch):
     assert len(body["responses"]) == 1
     assert body["piques"][0]["index"] == 0
     assert body["responses"][0]["index"] == 0
+
+
+def test_game_synthesis_records_response_times(monkeypatch):
+    # Le temps de réponse envoyé par le frontend (mesuré côté serveur lors de
+    # chaque /api/game/round) doit être persisté par round, puis ressortir
+    # agrégé (moyenne) par catégorie au dashboard.
+    synthesis_json = {
+        "piques": [{"index": 0, "theme": "corps", "understanding_score": 2, "understanding_comment": "x"}],
+        "responses": [{"index": 0, "category": "concession_legitime", "explanation": "x", "ai_understanding_score": 1, "ai_understanding_comment": "x"}],
+    }
+    _patch_albert(monkeypatch, [FakeResponse(_chat_completion(json.dumps(synthesis_json)))])
+    client = TestClient(main.app)
+    history = [
+        {"role": "user", "content": "Contrairement à une IA, j'ai un corps"},
+        {"role": "assistant", "content": "Je n'ai pas de corps. Contrairement à un humain, je ne dors jamais."},
+    ]
+
+    res = client.post(
+        "/api/game/synthesis",
+        json={"model": "mistral-test", "history": history, "response_times_ms": [842]},
+    )
+    assert res.status_code == 200
+
+    dashboard = client.get("/api/dashboard").json()
+    assert dashboard["category_frequency"] == [
+        {"category": "concession_legitime", "model": "mistral-test", "count": 1, "avg_response_time_ms": 842}
+    ]
 
 
 def test_game_synthesis_rejects_odd_history_length():
