@@ -54,6 +54,8 @@ frontend/
   anonymisation.html, fondements.html, a-propos-ia.html   Pages de fond
 docs/brief/             Brief, notes scientifiques, checklists RGPD/AI Act
 docs/prompts-systeme.md Copie exacte des system prompts (round de jeu, analyse)
+docs/dashboard-archive/ Instantanés quotidiens du dashboard (la base SQLite
+                        de prod est éphémère, repart à zéro à chaque déploiement)
 ```
 
 ## Lancer en local
