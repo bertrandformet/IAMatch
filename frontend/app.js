@@ -19,6 +19,7 @@ const timerDurationField = document.getElementById("timer-duration-field");
 const timerDurationInput = document.getElementById("timer-duration");
 const startBtn = document.getElementById("start-btn");
 const quickStartBtn = document.getElementById("quick-start-btn");
+const atelierStartBtn = document.getElementById("atelier-start-btn");
 const setupError = document.getElementById("setup-error");
 const quickSummary = document.getElementById("quick-summary");
 const entryActions = document.getElementById("entry-actions");
@@ -28,14 +29,19 @@ const advancedFields = document.getElementById("advanced-fields");
 const consentModal = document.getElementById("consent-modal");
 const consentCancelBtn = document.getElementById("consent-cancel-btn");
 const consentAcceptBtn = document.getElementById("consent-accept-btn");
+const soundToggle = document.getElementById("sound-toggle");
+const backgroundToggle = document.getElementById("background-toggle");
 
 const roundCounterEl = document.getElementById("round-counter");
 const modelNameLabel = document.getElementById("model-name-label");
-const timerBadge = document.getElementById("timer-badge");
+const timerLine = document.getElementById("timer-line");
+const timerLineFill = document.getElementById("timer-line-fill");
+const timerSr = document.getElementById("timer-sr");
 const collectifBanner = document.getElementById("collectif-banner");
 const collectifPhaseLabel = document.getElementById("collectif-phase-label");
-const collectifPhaseTimer = document.getElementById("collectif-phase-timer");
 const collectifSkipBtn = document.getElementById("collectif-skip-btn");
+const pinnedAiReply = document.getElementById("pinned-ai-reply");
+const pinnedAiText = document.getElementById("pinned-ai-text");
 const neuralAvatar = document.getElementById("neural-avatar");
 const messagesEl = document.getElementById("messages");
 const piqueInput = document.getElementById("pique-input");
@@ -59,7 +65,28 @@ let state = {
   collectifInterval: null,
   aiCaptionEls: [], // une entrée par réponse IA, dans l'ordre, pour l'annotation post-synthèse
   piquePrefix: "Contrairement à une IA, ", // pré-rempli, sans pronom (voir beginGame)
+  soundEnabled: false, // redemandé à chaque partie via la pop-up de consentement
+  backgroundEnabled: true,
 };
+
+// Son de validation à l'envoi : fichier audio (sounds/envoi.wav, "Message
+// envoyé" de LaSonothèque.fr — licence libre de droits/CC0, sans attribution
+// obligatoire, courtoisie appréciée par l'auteur) plutôt qu'un son synthétisé
+// — remplace un premier essai en Web Audio (oscillateur), jugé trop pauvre en
+// timbre par rapport à un vrai enregistrement. Précréé une seule fois et
+// rembobiné à chaque envoi plutôt que recréé, pour rester réactif si deux
+// envois se suivent rapidement.
+const sendSound = new Audio("sounds/envoi.wav");
+
+function playSendSound() {
+  if (!state.soundEnabled) return;
+  sendSound.currentTime = 0;
+  // .play() renvoie une promesse rejetée si l'autoplay est bloqué — n'arrive
+  // pas ici en pratique (toujours appelé depuis un geste utilisateur direct,
+  // clic sur "Envoyer" ou touche Entrée), mais ne doit jamais faire planter
+  // l'envoi de la pique si ça arrivait quand même.
+  sendSound.play().catch(() => {});
+}
 
 function resetPiqueInputToPrefix() {
   piqueInput.value = state.piquePrefix;
@@ -181,6 +208,7 @@ async function loadModels() {
     });
     startBtn.disabled = false;
     quickStartBtn.disabled = false;
+    atelierStartBtn.disabled = false;
   } catch (err) {
     setupError.textContent =
       "Impossible de récupérer la liste des modèles de langage (" + err.message + "). " +
@@ -188,6 +216,7 @@ async function loadModels() {
     setupError.style.display = "block";
     startBtn.disabled = true;
     quickStartBtn.disabled = true;
+    atelierStartBtn.disabled = true;
   }
 }
 
@@ -228,31 +257,58 @@ customizeToggle.addEventListener("click", () => {
   entryActions.style.display = "none";
 });
 
-// Le clic sur « Partie rapide » ou « Lancer la partie » ouvre systématiquement
-// la pop-up d'information/consentement (interaction avec une IA, rappel
-// anti-données sensibles, anonymisation) : la partie ne démarre réellement
-// qu'à l'acceptation explicite. Sans accord, pas de jeu.
+// Le clic sur « Session rapide », « Atelier de groupe » ou « Lancer la partie »
+// ouvre systématiquement la pop-up d'information/consentement (interaction
+// avec une IA, rappel anti-données sensibles, anonymisation) : la partie ne
+// démarre réellement qu'à l'acceptation explicite. Sans accord, pas de jeu.
 //
-// « Partie rapide » ne laisse pas le joueur choisir de modèle : sans
-// rotation, ce serait toujours le premier de la liste, biaisant
-// structurellement le dashboard public vers un seul modèle. Le serveur
-// attribue le modèle (rotation globale, voir /api/quick-start-model) avant
-// l'ouverture de la pop-up.
-quickStartBtn.addEventListener("click", async () => {
-  quickStartBtn.disabled = true;
+// « Session rapide » et « Atelier de groupe » ne laissent pas le joueur
+// choisir de modèle : sans rotation, ce serait toujours le premier de la
+// liste, biaisant structurellement le dashboard public vers un seul modèle.
+// Le serveur attribue le modèle (rotation globale, voir
+// /api/quick-start-model) avant l'ouverture de la pop-up.
+// Force le mode individuel/collectif comme le ferait un clic direct sur le
+// bouton du groupe correspondant (déclenche aussi mode-hint/timerField),
+// pour que "Session rapide" et "Atelier de groupe" restent idempotents même
+// si l'un a été cliqué puis annulé avant l'autre.
+function forceMode(value) {
+  modeGroup.querySelectorAll(".btn-choice").forEach((b) => b.classList.toggle("is-active", b.dataset.value === value));
+  const collectif = value === "collectif";
+  modeHint.style.display = collectif ? "block" : "none";
+  timerField.style.display = collectif ? "none" : "block";
+}
+
+async function assignQuickModel(button, errorContext) {
+  button.disabled = true;
   try {
     const res = await fetch("/api/quick-start-model", { method: "POST" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     modelSelect.value = data.model;
-    consentModal.style.display = "flex";
+    return true;
   } catch (err) {
-    setupError.textContent = `Impossible d'assigner un modèle pour la partie rapide (${err.message}).`;
+    setupError.textContent = `Impossible d'assigner un modèle pour ${errorContext} (${err.message}).`;
     setupError.style.display = "block";
+    return false;
   } finally {
-    quickStartBtn.disabled = false;
+    button.disabled = false;
+  }
+}
+
+quickStartBtn.addEventListener("click", async () => {
+  forceMode("individuel");
+  if (await assignQuickModel(quickStartBtn, "la session rapide")) {
+    consentModal.style.display = "flex";
   }
 });
+
+atelierStartBtn.addEventListener("click", async () => {
+  forceMode("collectif");
+  if (await assignQuickModel(atelierStartBtn, "l'atelier de groupe")) {
+    consentModal.style.display = "flex";
+  }
+});
+
 startBtn.addEventListener("click", () => {
   consentModal.style.display = "flex";
 });
@@ -262,6 +318,8 @@ consentCancelBtn.addEventListener("click", () => {
 });
 
 consentAcceptBtn.addEventListener("click", () => {
+  state.soundEnabled = soundToggle.checked;
+  state.backgroundEnabled = backgroundToggle.checked;
   consentModal.style.display = "none";
   beginGame();
 });
@@ -288,6 +346,7 @@ function startCollectifPhase(index) {
   state.collectifTimeLeft = phase.duration;
   setComposerEnabled(phase.composerEnabled);
   collectifSkipBtn.style.display = phase.isLast ? "none" : "inline-block";
+  timerLine.style.display = "block";
   renderCollectifPhase();
   state.collectifInterval = setInterval(() => {
     state.collectifTimeLeft -= 1;
@@ -303,7 +362,8 @@ function renderCollectifPhase() {
   const phase = COLLECTIF_PHASES[state.collectifPhase];
   collectifPhaseLabel.textContent = `Étape ${state.collectifPhase + 1}/${COLLECTIF_PHASES.length} · ${phase.label}`;
   const left = Math.max(state.collectifTimeLeft, 0);
-  collectifPhaseTimer.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+  renderTimerLine(left, phase.duration);
+  timerSr.textContent = `${left} secondes restantes pour cette étape.`;
 }
 
 function advanceCollectifPhase() {
@@ -323,6 +383,7 @@ function advanceCollectifPhase() {
 
 function stopCollectifPhases() {
   clearInterval(state.collectifInterval);
+  if (state.mode === "collectif") timerLine.style.display = "none";
 }
 
 collectifSkipBtn.addEventListener("click", () => {
@@ -345,6 +406,8 @@ function beginGame() {
   modelNameLabel.textContent = state.model;
   updateRoundCounter();
   collectifBanner.style.display = state.mode === "collectif" ? "flex" : "none";
+  messagesEl.classList.toggle("bg-disabled", !state.backgroundEnabled);
+  pinnedAiReply.style.display = "none";
 
   setupScreen.classList.remove("active");
   gameScreen.classList.add("active");
@@ -354,7 +417,7 @@ function beginGame() {
   if (state.mode === "collectif") {
     startCollectifPhase(0);
   } else if (state.timerEnabled) {
-    timerBadge.style.display = "inline-block";
+    timerLine.style.display = "block";
     startTimer();
     piqueInput.focus();
   } else {
@@ -386,12 +449,22 @@ function startTimer() {
 
 function stopTimer() {
   clearInterval(state.timerInterval);
-  timerBadge.classList.remove("time-up");
 }
 
 function renderTimer() {
-  timerBadge.textContent = `${Math.max(state.timeLeft, 0)}s`;
-  timerBadge.classList.toggle("time-up", state.timeLeft <= 0);
+  const left = Math.max(state.timeLeft, 0);
+  renderTimerLine(left, state.timerDuration);
+  timerSr.textContent = `${left} secondes restantes.`;
+}
+
+// Chronomètre apaisant : une ligne qui se consume (largeur en % du temps
+// restant) plutôt que des chiffres qui défilent, couleur neutre tant qu'il
+// reste plus de 20% du temps imparti, orange doux ensuite. Partagée entre le
+// timer individuel "spontané" et chaque étape du mode collectif.
+function renderTimerLine(left, duration) {
+  const pct = duration > 0 ? Math.max(0, Math.min(100, (left / duration) * 100)) : 0;
+  timerLineFill.style.width = `${pct}%`;
+  timerLineFill.classList.toggle("is-ending", duration > 0 && left / duration <= 0.2);
 }
 
 function onTimerExpired() {
@@ -454,8 +527,10 @@ async function sendPique() {
   const text = piqueInput.value.trim();
   if (!text || state.waitingForAi) return;
 
+  playSendSound();
+
   stopTimer();
-  timerBadge.style.display = "none";
+  timerLine.style.display = "none";
   stopCollectifPhases();
 
   addBubble("user", text);
@@ -486,6 +561,8 @@ async function sendPique() {
 
     loadingRow.remove();
     addBubble("assistant", data.reply);
+    pinnedAiText.textContent = data.reply;
+    pinnedAiReply.style.display = "flex";
 
     state.history.push({ role: "user", content: text });
     state.history.push({ role: "assistant", content: data.reply });
@@ -513,7 +590,7 @@ async function sendPique() {
     } else {
       piqueInput.focus();
       if (state.timerEnabled && state.currentRound <= state.totalRounds) {
-        timerBadge.style.display = "inline-block";
+        timerLine.style.display = "block";
         startTimer();
       }
     }
@@ -547,8 +624,9 @@ function addReplayButton(container) {
 
 async function endGame() {
   composer.style.display = "none";
-  timerBadge.style.display = "none";
+  timerLine.style.display = "none";
   collectifBanner.style.display = "none";
+  pinnedAiReply.style.display = "none";
   stopCollectifPhases();
 
   const loadingBanner = document.createElement("div");

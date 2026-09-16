@@ -437,20 +437,21 @@ async def list_models(raw: bool = False):
     return {"models": _filter_chat_models(data)}
 
 
-# Compteur de rotation pour "Partie rapide" — en mémoire, comme
-# _rate_limit_buckets (remis à zéro à chaque redémarrage, ce qui est
-# acceptable ici : l'objectif est d'éviter un biais structurel vers le
-# premier modèle de la liste, pas une garantie d'équirépartition exacte).
+# Compteur de rotation pour "Session rapide"/"Atelier de groupe" — en
+# mémoire, comme _rate_limit_buckets (remis à zéro à chaque redémarrage, ce
+# qui est acceptable ici : l'objectif est d'éviter un biais structurel vers
+# le premier modèle de la liste, pas une garantie d'équirépartition exacte).
 _quick_start_index = 0
 
 
 @app.post("/api/quick-start-model")
 async def quick_start_model():
-    """Modèle assigné à une « Partie rapide » (le joueur n'en choisit pas).
-    Sans rotation, ce serait toujours le premier modèle de la liste Albert,
-    biaisant structurellement le dashboard public vers un seul modèle — à
-    l'opposé de son but, qui est justement de comparer les modèles entre
-    eux. Chaque appel avance d'un cran, en boucle sur la liste courante."""
+    """Modèle assigné à une « Session rapide » ou un « Atelier de groupe »
+    (le joueur n'en choisit pas dans ces deux parcours). Sans rotation, ce
+    serait toujours le premier modèle de la liste Albert, biaisant
+    structurellement le dashboard public vers un seul modèle — à l'opposé de
+    son but, qui est justement de comparer les modèles entre eux. Chaque
+    appel avance d'un cran, en boucle sur la liste courante."""
     global _quick_start_index
     data = await _fetch_albert_raw_models()
     models = _filter_chat_models(data)

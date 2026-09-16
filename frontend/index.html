@@ -67,10 +67,11 @@
     <div class="intro-dots"><span class="is-active"></span><span></span><span></span></div>
     <p class="setup-duration-hint">Compte 5 à 15 minutes, selon le nombre de tours choisi (5 à 10).</p>
 
-    <p class="quick-summary" id="quick-summary">Choisis une partie rapide avec les réglages par défaut ou personnalise ta partie en choisissant le mode, le modèle et le rythme.</p>
+    <p class="quick-summary" id="quick-summary">Session rapide en solo, atelier de groupe chronométré, ou personnalise le mode, le modèle et le rythme.</p>
     <div class="entry-actions" id="entry-actions">
-      <button type="button" id="quick-start-btn" class="cta-button">Partie rapide</button>
-      <button type="button" id="customize-toggle" class="cta-button">Partie personnalisée</button>
+      <button type="button" id="quick-start-btn" class="cta-button">Session rapide</button>
+      <button type="button" id="atelier-start-btn" class="cta-button">Atelier de groupe</button>
+      <button type="button" id="customize-toggle" class="cta-button is-secondary">Personnaliser</button>
     </div>
 
     <div id="advanced-fields" style="display:none;">
@@ -145,6 +146,16 @@
       Ce jeu s'adresse en priorité aux plus de 14 ans (à partir de la 4ème pour un usage
       scolaire). En dessous, un accompagnement par un adulte ou un enseignant est recommandé.
     </p>
+    <div class="modal-prefs">
+      <label class="checkbox-row">
+        <input type="checkbox" id="sound-toggle" />
+        Son discret de validation à l'envoi de chaque réplique
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="background-toggle" checked />
+        Fond visuel discret pendant la partie
+      </label>
+    </div>
     <div class="modal-actions">
       <button id="consent-cancel-btn" class="btn-secondary">Annuler</button>
       <button id="consent-accept-btn" class="btn-primary">J'ai compris, je lance la partie</button>
@@ -170,15 +181,21 @@
       <div class="round-counter" id="round-counter">Tour 1 / 4</div>
       <div class="model-name" id="model-name-label"></div>
     </div>
-    <div class="timer-badge" id="timer-badge" style="display:none;"></div>
   </header>
 
+  <div class="timer-line" id="timer-line" style="display:none;" aria-hidden="true">
+    <div class="timer-line-fill" id="timer-line-fill"></div>
+  </div>
+  <span id="timer-sr" class="sr-only" aria-live="polite"></span>
+
   <div class="collectif-banner" id="collectif-banner" style="display:none;">
-    <div class="collectif-phase-info">
-      <span id="collectif-phase-label"></span>
-      <span id="collectif-phase-timer"></span>
-    </div>
+    <span id="collectif-phase-label"></span>
     <button type="button" id="collectif-skip-btn" class="collectif-skip-btn">Passer →</button>
+  </div>
+
+  <div class="pinned-ai-reply" id="pinned-ai-reply" style="display:none;">
+    <span class="pinned-ai-label">IA</span>
+    <p id="pinned-ai-text"></p>
   </div>
 
   <div id="messages"></div>

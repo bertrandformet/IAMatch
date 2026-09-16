@@ -85,3 +85,7 @@ ALBERT_API_KEY=test-key .venv/bin/python -m pytest
 
 Contenu et code sous licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr),
 [Une IA par jour](https://uneiaparjour.fr). Contact : contact@uneiaparjour.fr
+
+Son de validation à l'envoi d'une pique (`frontend/sounds/envoi.wav`) : « Message envoyé »,
+[LaSonothèque.fr](https://lasonotheque.org/), libre de droits (CC0/domaine public), attribution
+non obligatoire mais créditée ici par courtoisie.
