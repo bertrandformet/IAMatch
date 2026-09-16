@@ -8,11 +8,12 @@ name: Archive du tableau de bord
 # attendant une éventuelle migration vers un stockage persistant
 # (Postgres/Supabase, voir docs/brief/checklist-rgpd-ia-match.md).
 #
-# Limite à garder en tête (voir aussi docs/dashboard-archive/README.md) :
-# chaque fichier est un total CUMULÉ depuis le dernier redéploiement, pas
-# un delta. Reconstruire une série continue à travers les redémarrages
-# demande de détecter les remises à zéro (total du jour < total du
-# snapshot précédent) au moment de l'analyse — pas fait automatiquement ici.
+# Chaque fichier AAAA-MM-JJ.json est un total CUMULÉ depuis le dernier
+# redéploiement, pas un delta — un redémarrage entre deux snapshots remet
+# les compteurs à zéro. scripts/rebuild_dashboard_history.py reconstruit
+# automatiquement un historique cohérent (docs/dashboard-archive/cumulative.json)
+# en détectant ces remises à zéro (voir sa docstring pour l'algorithme, et
+# docs/dashboard-archive/README.md pour le résumé).
 
 on:
   schedule:
@@ -37,6 +38,9 @@ jobs:
           curl -sf --retry 3 --retry-delay 10 --max-time 90 \
             https://iamatch.onrender.com/api/dashboard \
             -o "docs/dashboard-archive/$(date -u +%Y-%m-%d).json"
+
+      - name: Reconstruit l'historique cumulé
+        run: python3 scripts/rebuild_dashboard_history.py
 
       - name: Commit si changement
         run: |
