@@ -33,6 +33,14 @@ simple : chaque ligne est déjà datée par jour calendaire (created_at d'un
 peut que croître jusqu'à ce qu'un redémarrage l'efface. Le maximum observé
 pour une (date, modèle) donnée à travers tous les snapshots est donc déjà
 la valeur finale exacte.
+
+`open_segment` : pour que /api/dashboard (backend) puisse fusionner ce
+fichier avec les données live SANS compter deux fois le segment en cours,
+il a besoin de savoir combien ce fichier a déjà compté pour le DERNIER
+segment (potentiellement encore ouvert, si aucun redémarrage n'a eu lieu
+depuis ce snapshot). C'est exactement la valeur du DERNIER snapshot de
+chaque clé (pas le total reconstruit) — exposée séparément ici plutôt que
+recalculée côté backend.
 """
 
 import json
@@ -88,6 +96,7 @@ def rebuild():
             "category_frequency": [],
             "theme_category_matrix": [],
             "timeline": [],
+            "open_segment": {"category_frequency": [], "theme_category_matrix": []},
             "snapshots_used": 0,
         }
 
@@ -104,15 +113,27 @@ def rebuild():
             available_models.add(row["model"])
 
     category_frequency = []
+    open_segment_cat_freq = []
     total_exchanges = 0
     for (category, model), seq in cat_freq_series.items():
         count, avg = _reconcile_counter(seq)
-        if count == 0:
-            continue
-        category_frequency.append(
-            {"category": category, "model": model, "count": count, "avg_response_time_ms": avg}
-        )
-        total_exchanges += count
+        if count > 0:
+            category_frequency.append(
+                {"category": category, "model": model, "count": count, "avg_response_time_ms": avg}
+            )
+            total_exchanges += count
+        # Dernier snapshot de cette clé = ce que le segment en cours (peut-être
+        # encore ouvert) pesait déjà à ce moment-là — voir docstring du module.
+        last_count, last_avg = seq[-1]
+        if last_count > 0:
+            open_segment_cat_freq.append(
+                {
+                    "category": category,
+                    "model": model,
+                    "count": last_count,
+                    "time_sum_ms": (last_avg * last_count) if last_avg is not None else None,
+                }
+            )
 
     # theme_category_matrix : clé = (theme, category) -> [(count, None), ...]
     theme_series: dict = {}
@@ -122,13 +143,19 @@ def rebuild():
             theme_series.setdefault(key, []).append((row["count"], None))
 
     theme_category_matrix = []
+    open_segment_theme = []
     for (theme, category), seq in theme_series.items():
         count, _ = _reconcile_counter(seq)
-        if count == 0:
-            continue
-        theme_category_matrix.append({"theme": theme, "category": category, "count": count})
+        if count > 0:
+            theme_category_matrix.append({"theme": theme, "category": category, "count": count})
+        last_count, _ = seq[-1]
+        if last_count > 0:
+            open_segment_theme.append({"theme": theme, "category": category, "count": last_count})
 
     # timeline : clé = (date, model) -> max(count) observé (voir docstring).
+    # Pas de notion de "segment ouvert" ici : une date passée ne peut que
+    # croître jusqu'à disparaître après un redémarrage (voir docstring), le
+    # backend peut fusionner par simple max() avec les données live.
     timeline_max: dict = {}
     for _snap_date, data in snapshots:
         for row in data.get("timeline", []):
@@ -147,6 +174,10 @@ def rebuild():
         "category_frequency": category_frequency,
         "theme_category_matrix": theme_category_matrix,
         "timeline": timeline,
+        "open_segment": {
+            "category_frequency": open_segment_cat_freq,
+            "theme_category_matrix": open_segment_theme,
+        },
         "snapshots_used": len(snapshots),
     }
 

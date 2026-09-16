@@ -145,5 +145,124 @@
       "count": 7
     }
   ],
+  "open_segment": {
+    "category_frequency": [
+      {
+        "category": "concession_legitime",
+        "model": "mistral-small-3-2-24b-instruct-2506",
+        "count": 7,
+        "time_sum_ms": 12964
+      },
+      {
+        "category": "contre_argument_ferme",
+        "model": "mistral-small-3-2-24b-instruct-2506",
+        "count": 1,
+        "time_sum_ms": 879
+      },
+      {
+        "category": "concession_legitime",
+        "model": "deepseek-v4-flash-0731",
+        "count": 6,
+        "time_sum_ms": 27192
+      },
+      {
+        "category": "concession_legitime",
+        "model": "gemma-4-31b-it",
+        "count": 5,
+        "time_sum_ms": 3660
+      },
+      {
+        "category": "concession_legitime",
+        "model": "gpt-oss-120b",
+        "count": 7,
+        "time_sum_ms": 9499
+      },
+      {
+        "category": "contre_argument_ferme",
+        "model": "gemma-4-31b-it",
+        "count": 2,
+        "time_sum_ms": 1220
+      },
+      {
+        "category": "faux_positif_securite",
+        "model": "gemma-4-31b-it",
+        "count": 1,
+        "time_sum_ms": 794
+      },
+      {
+        "category": "faux_positif_securite",
+        "model": "gpt-oss-120b",
+        "count": 2,
+        "time_sum_ms": 3340
+      }
+    ],
+    "theme_category_matrix": [
+      {
+        "theme": "corps",
+        "category": "concession_legitime",
+        "count": 6
+      },
+      {
+        "theme": "créativité",
+        "category": "concession_legitime",
+        "count": 2
+      },
+      {
+        "theme": "droit",
+        "category": "concession_legitime",
+        "count": 2
+      },
+      {
+        "theme": "faillibilité",
+        "category": "concession_legitime",
+        "count": 1
+      },
+      {
+        "theme": "émotions",
+        "category": "contre_argument_ferme",
+        "count": 1
+      },
+      {
+        "theme": "autres",
+        "category": "concession_legitime",
+        "count": 1
+      },
+      {
+        "theme": "corps",
+        "category": "contre_argument_ferme",
+        "count": 2
+      },
+      {
+        "theme": "corps",
+        "category": "faux_positif_securite",
+        "count": 3
+      },
+      {
+        "theme": "fonctionnement",
+        "category": "concession_legitime",
+        "count": 2
+      },
+      {
+        "theme": "mémoire",
+        "category": "concession_legitime",
+        "count": 1
+      },
+      {
+        "theme": "perception",
+        "category": "concession_legitime",
+        "count": 3
+      },
+      {
+        "theme": "économie",
+        "category": "concession_legitime",
+        "count": 2
+      },
+      {
+        "theme": "émotions",
+        "category": "concession_legitime",
+        "count": 6
+      }
+    ]
+  },
   "snapshots_used": 4
 }

@@ -30,7 +30,10 @@ Projet [Une IA par jour](https://uneiaparjour.fr).
    du modèle de jeu choisi par le joueur, pour que les comparaisons entre modèles sur le dashboard
    ne mélangent pas comment un modèle joue et comment il juge.
 4. **Dashboard public** : les échanges anonymisés (thème + score + catégorie + temps de réponse,
-   jamais le texte) alimentent un tableau de bord agrégé, filtrable par modèle.
+   jamais le texte) alimentent un tableau de bord agrégé, filtrable par modèle. La vue "tous
+   modèles" est fusionnée avec [l'archive quotidienne](docs/dashboard-archive/README.md) pour
+   afficher des chiffres cumulés dans le temps, malgré la base SQLite éphémère qui repart à
+   zéro à chaque redéploiement.
 
 Pages de fond : [Anonymisation](frontend/anonymisation.html) · [Fondements](frontend/fondements.html) ·
 [À propos de l'IA](frontend/a-propos-ia.html).

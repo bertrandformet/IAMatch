@@ -699,11 +699,154 @@ async def game_synthesis(req: SynthesisRequest, request: Request):
     return synthesis
 
 
+# Fusion avec l'archive GitHub (docs/dashboard-archive/cumulative.json,
+# produite par scripts/rebuild_dashboard_history.py) : sans ça, le dashboard
+# public retombe à des chiffres dérisoires à chaque redéploiement (la base
+# SQLite est éphémère). Seule la vue "tous modèles" est fusionnée — le
+# détail par thème n'est pas ventilé par modèle dans l'archive (il ne l'est
+# déjà pas à l'affichage, voir dashboard.js), donc un filtre par modèle
+# spécifique reste en direct (depuis le dernier redémarrage) pour l'instant.
+#
+# Piège évité : l'archive contient déjà, dans son total reconstruit, la
+# valeur du dernier segment (potentiellement encore en cours si aucun
+# redémarrage n'a eu lieu depuis). Fusionner naïvement (archive + live)
+# compterait ce segment deux fois. `open_segment` (voir le script) expose
+# justement la valeur de ce dernier segment pour permettre de la REMPLACER
+# par le live (pas de redémarrage depuis) plutôt que de l'additionner.
+DASHBOARD_ARCHIVE_URL = os.getenv(
+    "DASHBOARD_ARCHIVE_URL",
+    "https://raw.githubusercontent.com/uneIAparjour/IAMatch/main/docs/dashboard-archive/cumulative.json",
+)
+_ARCHIVE_CACHE_TTL_SECONDS = 600  # 10 min : évite de solliciter GitHub à chaque vue du dashboard
+_archive_cache: dict = {"data": None, "fetched_at": 0.0}
+
+
+async def _fetch_archive_cumulative() -> Optional[dict]:
+    now = time.monotonic()
+    if _archive_cache["data"] is not None and (now - _archive_cache["fetched_at"]) < _ARCHIVE_CACHE_TTL_SECONDS:
+        return _archive_cache["data"]
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(DASHBOARD_ARCHIVE_URL)
+            resp.raise_for_status()
+            data = resp.json()
+    except (httpx.HTTPError, ValueError):
+        # Archive injoignable ou absente (repo tout juste créé, pas encore de
+        # premier run planifié) : retombe sur la dernière valeur connue (ou
+        # None) plutôt que de casser le dashboard.
+        return _archive_cache["data"]
+    _archive_cache["data"] = data
+    _archive_cache["fetched_at"] = now
+    return data
+
+
+def _merge_category_frequency(live_rows: list, archive: Optional[dict]) -> list:
+    if not archive:
+        return live_rows
+    archived_by_key = {(r["category"], r["model"]): r for r in archive.get("category_frequency", [])}
+    open_by_key = {
+        (r["category"], r["model"]): r
+        for r in archive.get("open_segment", {}).get("category_frequency", [])
+    }
+    live_by_key = {(r["category"], r["model"]): r for r in live_rows}
+
+    merged = {}
+    for key in set(archived_by_key) | set(live_by_key):
+        archived = archived_by_key.get(key)
+        open_seg = open_by_key.get(key)
+        live = live_by_key.get(key)
+
+        archived_count = archived["count"] if archived else 0
+        archived_time_sum = (
+            archived["avg_response_time_ms"] * archived_count
+            if archived and archived.get("avg_response_time_ms") is not None
+            else 0
+        )
+        open_count = open_seg["count"] if open_seg else 0
+        open_time_sum = (open_seg.get("time_sum_ms") or 0) if open_seg else 0
+        live_count = live["count"] if live else 0
+        live_time_sum = (
+            live["avg_response_time_ms"] * live_count
+            if live and live.get("avg_response_time_ms") is not None
+            else 0
+        )
+
+        if live_count >= open_count:
+            # Pas de redémarrage depuis le dernier archivage : le live
+            # remplace la contribution du segment en cours.
+            count = archived_count - open_count + live_count
+            time_sum = archived_time_sum - open_time_sum + live_time_sum
+        else:
+            # Redémarrage depuis le dernier archivage : le live est un
+            # nouveau segment, à additionner.
+            count = archived_count + live_count
+            time_sum = archived_time_sum + live_time_sum
+
+        if count <= 0:
+            continue
+        merged[key] = {
+            "category": key[0],
+            "model": key[1],
+            "count": count,
+            "avg_response_time_ms": round(time_sum / count) if time_sum > 0 else None,
+        }
+    return list(merged.values())
+
+
+def _merge_theme_matrix(live_rows: list, archive: Optional[dict]) -> list:
+    if not archive:
+        return live_rows
+    archived_by_key = {(r["theme"], r["category"]): r["count"] for r in archive.get("theme_category_matrix", [])}
+    open_by_key = {
+        (r["theme"], r["category"]): r["count"]
+        for r in archive.get("open_segment", {}).get("theme_category_matrix", [])
+    }
+    live_by_key = {(r["theme"], r["category"]): r["count"] for r in live_rows}
+
+    merged = {}
+    for key in set(archived_by_key) | set(live_by_key):
+        archived_count = archived_by_key.get(key, 0)
+        open_count = open_by_key.get(key, 0)
+        live_count = live_by_key.get(key, 0)
+        if live_count >= open_count:
+            count = archived_count - open_count + live_count
+        else:
+            count = archived_count + live_count
+        if count <= 0:
+            continue
+        merged[key] = {"theme": key[0], "category": key[1], "count": count}
+    return list(merged.values())
+
+
+def _merge_timeline(live_rows: list, archive: Optional[dict]) -> list:
+    """Pas de notion de segment ouvert ici : une date passée ne peut que
+    croître jusqu'à disparaître après un redémarrage (voir le script), un
+    simple max() par (date, modèle) suffit et reste exact."""
+    if not archive:
+        return live_rows
+    combined: dict = {}
+    for r in archive.get("timeline", []):
+        key = (r["date"], r["model"])
+        combined[key] = max(combined.get(key, 0), r["count"])
+    for r in live_rows:
+        key = (r["date"], r["model"])
+        combined[key] = max(combined.get(key, 0), r["count"])
+    return [
+        {"date": d, "model": m, "count": c}
+        for (d, m), c in sorted(combined.items())
+        if c > 0
+    ]
+
+
 @app.get("/api/dashboard")
 async def dashboard(model: Optional[str] = None):
     """Dashboard méta — agrégats publics et anonymes. Sans `model`, agrège
-    toutes les parties/modèles confondus ; avec `model`, restreint tous les
-    agrégats (y compris l'évolution dans le temps) à ce seul modèle — le but
+    toutes les parties/modèles confondus, fusionné avec l'archive GitHub
+    (voir _fetch_archive_cumulative) pour afficher des chiffres cumulés
+    dans le temps plutôt que remis à zéro à chaque redéploiement de la base
+    SQLite éphémère ; avec `model`, restreint tous les agrégats (y compris
+    l'évolution dans le temps) à ce seul modèle, en direct depuis le
+    dernier redémarrage (pas de fusion — voir _merge_theme_matrix) — le but
     étant justement de pouvoir observer les tendances propres à chaque
     modèle, pas seulement une moyenne globale qui les noie. Aucune donnée
     individuelle : uniquement des comptages."""
@@ -769,6 +912,19 @@ async def dashboard(model: Optional[str] = None):
                 params,
             )
         ]
+
+    # Fusion avec l'archive GitHub uniquement pour la vue "tous modèles" : le
+    # détail par thème n'y est pas ventilé par modèle (voir _merge_theme_matrix),
+    # donc un filtre par modèle spécifique resterait incorrect à fusionner —
+    # reste en direct (depuis le dernier redémarrage) pour ce cas précis.
+    if model is None:
+        archive = await _fetch_archive_cumulative()
+        category_frequency = _merge_category_frequency(category_frequency, archive)
+        theme_category_matrix = _merge_theme_matrix(theme_category_matrix, archive)
+        timeline = _merge_timeline(timeline, archive)
+        if archive:
+            available_models = sorted(set(available_models) | set(archive.get("available_models", [])))
+        total = sum(row["count"] for row in category_frequency)
 
     return {
         "available_models": available_models,

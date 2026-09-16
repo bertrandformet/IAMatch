@@ -43,3 +43,33 @@ avant même que le script de reconstruction ne voie les deux valeurs — le
 total d'avant le reset a disparu du même coup. Passage à un nom de fichier
 horodaté à la seconde près pour que deux exécutions le même jour produisent
 deux fichiers distincts, jamais un écrasement.
+
+## Branché sur le tableau de bord public
+
+`/api/dashboard` (vue "tous les modèles" uniquement — voir plus bas)
+récupère `cumulative.json` depuis GitHub (en cache 10 minutes côté serveur)
+et le fusionne avec les chiffres live de la base SQLite, plutôt que de
+n'afficher que les chiffres depuis le dernier redémarrage : SQL → GitHub
+(archive quotidienne) → GitHub (`cumulative.json` reconstruit) → tableau de
+bord.
+
+**Piège évité par `open_segment`** : `cumulative.json` inclut déjà, dans
+son total, la valeur du dernier segment archivé (potentiellement encore
+ouvert si aucun redémarrage n'a eu lieu depuis). Additionner naïvement ce
+total au live compterait ce segment deux fois. `open_segment` expose donc
+séparément la valeur de ce dernier segment, pour que le backend puisse soit
+la **remplacer** par le live (compte live ≥ segment ouvert : pas de
+redémarrage depuis), soit l'**additionner** (compte live < segment ouvert :
+un redémarrage a eu lieu depuis l'archivage, le live est un nouveau
+segment). Logique dans `backend/app/main.py` (`_merge_category_frequency`,
+`_merge_theme_matrix`, `_merge_timeline`), testée dans
+`backend/tests/test_dashboard.py`.
+
+**Limite assumée** : seule la vue "tous les modèles" est fusionnée. Un
+filtre par modèle spécifique reste en direct (depuis le dernier
+redémarrage) — le détail par thème n'est pas ventilé par modèle dans
+l'archive (il ne l'est déjà pas à l'affichage, voir `dashboard.js`), donc
+le fusionner correctement pour un modèle précis demanderait d'étendre le
+format d'archive. Si l'archive est injoignable (GitHub en panne, ou dépôt
+tout juste créé sans premier run), le dashboard retombe silencieusement
+sur les seuls chiffres live plutôt que de casser la page.
