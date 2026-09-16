@@ -1,8 +1,55 @@
 {
-  "available_models": [],
-  "total_exchanges": 0,
-  "category_frequency": [],
-  "theme_category_matrix": [],
-  "timeline": [],
-  "snapshots_used": 2
+  "available_models": [
+    "mistral-small-3-2-24b-instruct-2506"
+  ],
+  "total_exchanges": 5,
+  "category_frequency": [
+    {
+      "category": "concession_legitime",
+      "model": "mistral-small-3-2-24b-instruct-2506",
+      "count": 4,
+      "avg_response_time_ms": 1192
+    },
+    {
+      "category": "contre_argument_ferme",
+      "model": "mistral-small-3-2-24b-instruct-2506",
+      "count": 1,
+      "avg_response_time_ms": 879
+    }
+  ],
+  "theme_category_matrix": [
+    {
+      "theme": "corps",
+      "category": "concession_legitime",
+      "count": 1
+    },
+    {
+      "theme": "créativité",
+      "category": "concession_legitime",
+      "count": 1
+    },
+    {
+      "theme": "droit",
+      "category": "concession_legitime",
+      "count": 1
+    },
+    {
+      "theme": "faillibilité",
+      "category": "concession_legitime",
+      "count": 1
+    },
+    {
+      "theme": "émotions",
+      "category": "contre_argument_ferme",
+      "count": 1
+    }
+  ],
+  "timeline": [
+    {
+      "date": "2026-09-16",
+      "model": "mistral-small-3-2-24b-instruct-2506",
+      "count": 5
+    }
+  ],
+  "snapshots_used": 3
 }
