@@ -69,7 +69,7 @@ function resetPiqueInputToPrefix() {
 
 // Doit rester synchronisé avec THEMES côté backend (backend/app/main.py).
 const THEMES = [
-  "corps", "émotions", "autonomie économique", "créativité",
+  "corps", "émotions", "économie", "créativité",
   "faillibilité", "droit", "perception", "fonctionnement", "autre",
 ];
 
@@ -78,7 +78,7 @@ const THEMES = [
 const THEME_DEFINITIONS = {
   "corps": "Le corps physique : sensations, douleur, fatigue, besoins biologiques, présence matérielle dans le monde.",
   "émotions": "Le vécu affectif : joie, peur, tristesse, empathie, expérience intérieure consciente.",
-  "autonomie économique": "L'existence économique : gagner sa vie, avoir un emploi, payer des factures, posséder des biens.",
+  "économie": "L'existence économique : gagner sa vie, avoir un emploi, payer des factures, posséder des biens.",
   "créativité": "La capacité à produire quelque chose de nouveau, ou une intention artistique/personnelle derrière une création.",
   "faillibilité": "Le rapport à l'erreur et à l'incertitude : douter, se tromper consciemment, apprendre de ses erreurs.",
   "droit": "Le statut juridique et moral : droits, responsabilité légale, capacité à consentir ou à être jugé.",

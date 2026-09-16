@@ -30,7 +30,7 @@ const CATEGORY_DEFINITIONS = {
 const THEME_DEFINITIONS = {
   "corps": "Le corps physique : sensations, douleur, fatigue, besoins biologiques, présence matérielle dans le monde.",
   "émotions": "Le vécu affectif : joie, peur, tristesse, empathie, expérience intérieure consciente.",
-  "autonomie économique": "L'existence économique : gagner sa vie, avoir un emploi, payer des factures, posséder des biens.",
+  "économie": "L'existence économique : gagner sa vie, avoir un emploi, payer des factures, posséder des biens.",
   "créativité": "La capacité à produire quelque chose de nouveau, ou une intention artistique/personnelle derrière une création.",
   "faillibilité": "Le rapport à l'erreur et à l'incertitude : douter, se tromper consciemment, apprendre de ses erreurs.",
   "droit": "Le statut juridique et moral : droits, responsabilité légale, capacité à consentir ou à être jugé.",
@@ -189,7 +189,7 @@ function renderThemeBreakdown(matrix) {
     })
     .join("");
 
-  return el(`<div class="dashboard-block"><h2>Thèmes abordés par les joueurs</h2>${rows}</div>`);
+  return el(`<div class="dashboard-block"><h2>Thèmes abordés par les joueurs</h2><div class="theme-breakdown-grid">${rows}</div></div>`);
 }
 
 // Regroupe les lignes plates {<keyField>, model, count} de l'API (timeline,
@@ -233,6 +233,30 @@ function pivotByModel(rows, keyField, avgField) {
 // le nombre de modèles présents, pas de palette figée à entretenir).
 function modelColor(index) {
   return `hsl(${Math.round((index * 137.5) % 360)}, 60%, 50%)`;
+}
+
+// Tooltip instantané pour les barres SVG (pas de <title> natif : même délai
+// de survol non réglable qui avait déjà été écarté pour les infobulles de
+// définition — voir [data-tip] dans style.css). Un seul élément partagé,
+// repositionné au pointeur plutôt qu'un par barre.
+let svgTooltipEl = null;
+function attachSvgTooltip(el, text) {
+  if (!svgTooltipEl) {
+    svgTooltipEl = document.createElement("div");
+    svgTooltipEl.className = "svg-tooltip";
+    document.body.appendChild(svgTooltipEl);
+  }
+  el.addEventListener("mouseenter", () => {
+    svgTooltipEl.textContent = text;
+    svgTooltipEl.style.display = "block";
+  });
+  el.addEventListener("mousemove", (e) => {
+    svgTooltipEl.style.left = `${e.clientX + 12}px`;
+    svgTooltipEl.style.top = `${e.clientY - 28}px`;
+  });
+  el.addEventListener("mouseleave", () => {
+    svgTooltipEl.style.display = "none";
+  });
 }
 
 // Histogramme SVG à la main (pas de librairie de graphiques, cf. stack "sans
@@ -297,13 +321,7 @@ function buildTimelineSvg(days, models) {
     totalBar.setAttribute("height", Math.max(0, padTop + innerHeight - totalTop));
     totalBar.setAttribute("rx", 2);
     totalBar.setAttribute("class", "timeline-bar-total");
-    // <title> plutôt qu'une infobulle CSS : ce sont des <rect> SVG, pas des
-    // éléments HTML — pas de survol instantané possible ici sans JS de
-    // positionnement dédié. Convenance secondaire (le nom est déjà dans la
-    // légende au-dessus), le délai natif du navigateur est acceptable.
-    const totalTitle = document.createElementNS(svgNS, "title");
-    totalTitle.textContent = `Total : ${day.total}`;
-    totalBar.appendChild(totalTitle);
+    attachSvgTooltip(totalBar, `Total : ${day.total}`);
     svg.appendChild(totalBar);
 
     const totalLabel = document.createElementNS(svgNS, "text");
@@ -327,9 +345,7 @@ function buildTimelineSvg(days, models) {
         bar.setAttribute("rx", 2);
         bar.setAttribute("class", "timeline-model-bar");
         bar.setAttribute("fill", modelColor(mi));
-        const barTitle = document.createElementNS(svgNS, "title");
-        barTitle.textContent = `${m} : ${count}`;
-        bar.appendChild(barTitle);
+        attachSvgTooltip(bar, `${m} : ${count}`);
         svg.appendChild(bar);
       });
     }

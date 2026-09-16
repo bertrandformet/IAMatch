@@ -91,11 +91,24 @@
 .freq-group .bar-row-model .bar-track { height: 7px; }
 .freq-group .bar-row-model .bar-count { font-size: 11px; }
 
-.theme-breakdown-row {
-  padding: 10px 0;
-  border-top: 1px solid var(--border);
+/* Grille à 2 colonnes à partir de 520px (la place en largeur du bloc le
+   permet) : chaque thème devient une petite carte à bordure propre plutôt
+   qu'un simple séparateur horizontal, qui ne fonctionnerait pas entre deux
+   colonnes. */
+.theme-breakdown-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
-.theme-breakdown-row:first-of-type { border-top: none; }
+@media (min-width: 520px) {
+  .theme-breakdown-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.theme-breakdown-row {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
 
 .theme-breakdown-head {
   display: flex;
@@ -142,3 +155,17 @@
 .timeline-swatch-total { background: var(--accent); }
 
 .block-subtitle { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
+
+.svg-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 30;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
