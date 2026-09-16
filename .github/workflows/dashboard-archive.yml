@@ -8,12 +8,19 @@ name: Archive du tableau de bord
 # attendant une éventuelle migration vers un stockage persistant
 # (Postgres/Supabase, voir docs/brief/checklist-rgpd-ia-match.md).
 #
-# Chaque fichier AAAA-MM-JJ.json est un total CUMULÉ depuis le dernier
-# redéploiement, pas un delta — un redémarrage entre deux snapshots remet
-# les compteurs à zéro. scripts/rebuild_dashboard_history.py reconstruit
-# automatiquement un historique cohérent (docs/dashboard-archive/cumulative.json)
-# en détectant ces remises à zéro (voir sa docstring pour l'algorithme, et
-# docs/dashboard-archive/README.md pour le résumé).
+# Chaque fichier est un total CUMULÉ depuis le dernier redéploiement, pas
+# un delta — un redémarrage entre deux snapshots remet les compteurs à
+# zéro. scripts/rebuild_dashboard_history.py reconstruit automatiquement un
+# historique cohérent (docs/dashboard-archive/cumulative.json) en détectant
+# ces remises à zéro (voir sa docstring pour l'algorithme, et
+# docs/dashboard-archive/README.md pour le résumé) — MAIS seulement s'il
+# dispose d'un point de mesure de part et d'autre de chaque redéploiement.
+# Nommer les fichiers par seule date (AAAA-MM-JJ.json) écrasait le snapshot
+# précédent quand deux exécutions tombaient le même jour (ex. déclenchement
+# manuel + reset entre les deux) : le point d'avant reset disparaissait
+# avant même que le script de reconstruction ne le voie — observé en
+# conditions réelles. Nommé par horodatage complet à la place : chaque
+# exécution produit son propre fichier, jamais écrasé.
 
 on:
   schedule:
@@ -37,19 +44,18 @@ jobs:
           # le temps qu'il redémarre.
           curl -sf --retry 3 --retry-delay 10 --max-time 90 \
             https://iamatch.onrender.com/api/dashboard \
-            -o "docs/dashboard-archive/$(date -u +%Y-%m-%d).json"
+            -o "docs/dashboard-archive/$(date -u +%Y-%m-%dT%H-%M-%SZ).json"
 
       - name: Reconstruit l'historique cumulé
         run: python3 scripts/rebuild_dashboard_history.py
 
-      - name: Commit si changement
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/dashboard-archive/
-          if git diff --cached --quiet; then
-            echo "Rien à archiver aujourd'hui."
-            exit 0
-          fi
-          git commit -m "Archive du tableau de bord — $(date -u +%Y-%m-%d)"
+          # Chaque exécution écrit son propre fichier horodaté (jamais
+          # écrasé) : il y a donc toujours quelque chose de nouveau à
+          # committer, pas besoin de vérifier un diff vide.
+          git commit -m "Archive du tableau de bord — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push

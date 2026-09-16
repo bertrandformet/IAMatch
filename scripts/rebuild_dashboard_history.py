@@ -42,7 +42,10 @@ ARCHIVE_DIR = Path(__file__).resolve().parent.parent / "docs" / "dashboard-archi
 
 
 def _load_snapshots():
-    """Charge tous les snapshots, triés par date (nom de fichier AAAA-MM-JJ.json)."""
+    """Charge tous les snapshots, triés chronologiquement par nom de fichier
+    (horodatage AAAA-MM-JJTHH-MM-SSZ.json — un fichier par exécution, jamais
+    écrasé même si plusieurs exécutions tombent le même jour ; les anciens
+    fichiers AAAA-MM-JJ.json, antérieurs à ce format, restent lisibles)."""
     files = sorted(ARCHIVE_DIR.glob("[0-9]" * 4 + "-*.json"))
     snapshots = []
     for f in files:
