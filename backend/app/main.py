@@ -726,7 +726,7 @@ async def game_synthesis(req: SynthesisRequest, request: Request):
 # par le live (pas de redémarrage depuis) plutôt que de l'additionner.
 DASHBOARD_ARCHIVE_URL = os.getenv(
     "DASHBOARD_ARCHIVE_URL",
-    "https://raw.githubusercontent.com/uneIAparjour/IAMatch/main/docs/dashboard-archive/cumulative.json",
+    "https://raw.githubusercontent.com/bertrandformet/IAMatch/main/docs/dashboard-archive/cumulative.json",
 )
 _ARCHIVE_CACHE_TTL_SECONDS = 600  # 10 min : évite de solliciter GitHub à chaque vue du dashboard
 _archive_cache: dict = {"data": None, "fetched_at": 0.0}
