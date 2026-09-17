@@ -67,6 +67,16 @@ def get_db() -> sqlite3.Connection:
     return conn
 
 
+# Le thème renvoyé par l'analyste n'est pas revalidé contre THEMES (voir
+# commentaire plus bas) : un léger écart de libellé (ex. "autres" au lieu du
+# "autre" attendu) est stocké tel quel et réapparaît comme une catégorie à
+# part sur le tableau de bord public. Repéré en conditions réelles (deux
+# cartes "autre"/"autres" distinctes) — alias explicite plutôt qu'une
+# validation stricte qui ferait échouer toute la synthèse pour un détail de
+# libellé.
+THEME_ALIASES = {"autres": "autre"}
+
+
 def record_exchanges(
     model: str,
     piques: list,
@@ -88,7 +98,7 @@ def record_exchanges(
         (
             now,
             model,
-            p.theme,
+            THEME_ALIASES.get(p.theme, p.theme),
             p.understanding_score,
             responses_by_index[p.index].category,
             response_times_ms.get(p.index),
@@ -820,23 +830,36 @@ def _merge_theme_matrix(live_rows: list, archive: Optional[dict]) -> list:
 
 
 def _merge_timeline(live_rows: list, archive: Optional[dict]) -> list:
-    """Pas de notion de segment ouvert ici : une date passée ne peut que
-    croître jusqu'à disparaître après un redémarrage (voir le script), un
-    simple max() par (date, modèle) suffit et reste exact."""
+    """Même logique remplacer/additionner que _merge_category_frequency (voir
+    open_segment) — un simple max() par (date, modèle) sous-comptait
+    silencieusement le jour courant quand un redémarrage survenait après le
+    dernier snapshot archivé (constaté en conditions réelles : redéploiement
+    en cours de journée juste après un archivage). Une date déjà passée au
+    moment du dernier snapshot n'a par construction pas de segment ouvert
+    (open_count reste à 0), donc cette même logique s'y réduit à une simple
+    addition — sans branche séparée à maintenir."""
     if not archive:
         return live_rows
-    combined: dict = {}
-    for r in archive.get("timeline", []):
-        key = (r["date"], r["model"])
-        combined[key] = max(combined.get(key, 0), r["count"])
-    for r in live_rows:
-        key = (r["date"], r["model"])
-        combined[key] = max(combined.get(key, 0), r["count"])
-    return [
-        {"date": d, "model": m, "count": c}
-        for (d, m), c in sorted(combined.items())
-        if c > 0
-    ]
+    archived_by_key = {(r["date"], r["model"]): r["count"] for r in archive.get("timeline", [])}
+    open_by_key = {
+        (r["date"], r["model"]): r["count"]
+        for r in archive.get("open_segment", {}).get("timeline", [])
+    }
+    live_by_key = {(r["date"], r["model"]): r["count"] for r in live_rows}
+
+    merged = {}
+    for key in set(archived_by_key) | set(live_by_key):
+        archived_count = archived_by_key.get(key, 0)
+        open_count = open_by_key.get(key, 0)
+        live_count = live_by_key.get(key, 0)
+        if live_count >= open_count:
+            count = archived_count - open_count + live_count
+        else:
+            count = archived_count + live_count
+        if count <= 0:
+            continue
+        merged[key] = {"date": key[0], "model": key[1], "count": count}
+    return sorted(merged.values(), key=lambda r: (r["date"], r["model"]))
 
 
 @app.get("/api/dashboard")

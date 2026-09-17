@@ -27,12 +27,20 @@ comptes — valide parce qu'au sein d'un même segment (pas de redémarrage),
 avg * count au dernier snapshot du segment est déjà la vraie somme des
 temps de réponse de ce segment.
 
-La timeline (répartition par jour) suit une logique différente et plus
-simple : chaque ligne est déjà datée par jour calendaire (created_at d'un
-échange, pas la date du snapshot) — une fois un jour passé, son compte ne
-peut que croître jusqu'à ce qu'un redémarrage l'efface. Le maximum observé
-pour une (date, modèle) donnée à travers tous les snapshots est donc déjà
-la valeur finale exacte.
+La timeline (répartition par jour) suit la MÊME logique de segments que
+category_frequency/theme_category_matrix, appliquée par clé (date, modèle)
+plutôt que (catégorie, modèle) — chaque ligne est déjà datée par jour
+calendaire (created_at d'un échange, pas la date du snapshot), mais le
+compte pour UNE date donnée reste soumis au même risque de redémarrage
+en cours de journée qu'une catégorie : repéré en conditions réelles (un
+redéploiement en cours de journée juste après un archivage a fait
+apparaître un total du jour inférieur à un snapshot précédent). Un simple
+max() par (date, modèle), utilisé dans une première version, sous-comptait
+silencieusement ce cas (il retombe sur le compte pré-redémarrage, plus élevé
+mais périmé, au lieu de sommer les deux segments) — remplacé par
+`_reconcile_counter`, identique à category_frequency. `open_segment.timeline`
+expose ensuite, comme pour les deux autres clés, la valeur du dernier
+snapshot pour que le backend puisse remplacer/additionner avec le live.
 
 `open_segment` : pour que /api/dashboard (backend) puisse fusionner ce
 fichier avec les données live SANS compter deux fois le segment en cours,
@@ -47,6 +55,14 @@ import json
 from pathlib import Path
 
 ARCHIVE_DIR = Path(__file__).resolve().parent.parent / "docs" / "dashboard-archive"
+
+# Un snapshot déjà archivé peut contenir un thème légèrement différent du
+# libellé canonique (ex. "autres" au lieu de "autre", vu en conditions
+# réelles) : repris tel quel par le backend au moment de l'écriture (voir
+# THEME_ALIASES dans backend/app/main.py). Normalisé ici aussi pour que les
+# anciens snapshots déjà commités fusionnent correctement au prochain
+# rebuild, sans avoir à réécrire les fichiers bruts.
+THEME_ALIASES = {"autres": "autre"}
 
 
 def _load_snapshots():
@@ -96,7 +112,7 @@ def rebuild():
             "category_frequency": [],
             "theme_category_matrix": [],
             "timeline": [],
-            "open_segment": {"category_frequency": [], "theme_category_matrix": []},
+            "open_segment": {"category_frequency": [], "theme_category_matrix": [], "timeline": []},
             "snapshots_used": 0,
         }
 
@@ -135,12 +151,21 @@ def rebuild():
                 }
             )
 
-    # theme_category_matrix : clé = (theme, category) -> [(count, None), ...]
+    # theme_category_matrix : clé = (theme, category) -> [(count, None), ...].
+    # Les variantes ("autre"/"autres") sont d'abord sommées PAR SNAPSHOT (un
+    # même fichier peut contenir les deux si le live avait déjà les deux au
+    # moment de la capture) avant d'entrer dans la séquence chronologique —
+    # sinon deux lignes du même fichier apparaîtraient comme deux points de la
+    # séquence, faussant la détection de redémarrage.
     theme_series: dict = {}
     for _date, data in snapshots:
+        per_snapshot: dict = {}
         for row in data.get("theme_category_matrix", []):
-            key = (row["theme"], row["category"])
-            theme_series.setdefault(key, []).append((row["count"], None))
+            theme = THEME_ALIASES.get(row["theme"], row["theme"])
+            key = (theme, row["category"])
+            per_snapshot[key] = per_snapshot.get(key, 0) + row["count"]
+        for key, count in per_snapshot.items():
+            theme_series.setdefault(key, []).append((count, None))
 
     theme_category_matrix = []
     open_segment_theme = []
@@ -152,21 +177,32 @@ def rebuild():
         if last_count > 0:
             open_segment_theme.append({"theme": theme, "category": category, "count": last_count})
 
-    # timeline : clé = (date, model) -> max(count) observé (voir docstring).
-    # Pas de notion de "segment ouvert" ici : une date passée ne peut que
-    # croître jusqu'à disparaître après un redémarrage (voir docstring), le
-    # backend peut fusionner par simple max() avec les données live.
-    timeline_max: dict = {}
-    for _snap_date, data in snapshots:
+    # timeline : clé = (date, model) -> [(count, None), ...], même logique de
+    # segments que category_frequency/theme_category_matrix (voir docstring
+    # du module) plutôt qu'un max() — un simple max() donnait le même résultat
+    # tant qu'aucun redémarrage ne survenait le même jour qu'un snapshot
+    # précédent, mais sous-comptait silencieusement dans ce cas (constaté en
+    # conditions réelles).
+    timeline_series: dict = {}
+    for _date, data in snapshots:
+        per_snapshot: dict = {}
         for row in data.get("timeline", []):
             key = (row["date"], row["model"])
-            timeline_max[key] = max(timeline_max.get(key, 0), row["count"])
+            per_snapshot[key] = per_snapshot.get(key, 0) + row["count"]
+        for key, count in per_snapshot.items():
+            timeline_series.setdefault(key, []).append((count, None))
 
-    timeline = [
-        {"date": d, "model": m, "count": c}
-        for (d, m), c in sorted(timeline_max.items())
-        if c > 0
-    ]
+    timeline = []
+    open_segment_timeline = []
+    for (date, model), seq in timeline_series.items():
+        count, _ = _reconcile_counter(seq)
+        if count > 0:
+            timeline.append({"date": date, "model": model, "count": count})
+        last_count, _ = seq[-1]
+        if last_count > 0:
+            open_segment_timeline.append({"date": date, "model": model, "count": last_count})
+    timeline.sort(key=lambda r: (r["date"], r["model"]))
+    open_segment_timeline.sort(key=lambda r: (r["date"], r["model"]))
 
     return {
         "available_models": sorted(available_models),
@@ -177,6 +213,7 @@ def rebuild():
         "open_segment": {
             "category_frequency": open_segment_cat_freq,
             "theme_category_matrix": open_segment_theme,
+            "timeline": open_segment_timeline,
         },
         "snapshots_used": len(snapshots),
     }

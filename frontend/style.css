@@ -436,6 +436,8 @@ body {
   width: 100%;
   background: var(--border);
   overflow: hidden;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .timer-line-fill {
@@ -470,39 +472,11 @@ body {
 }
 .collectif-skip-btn:hover { background: var(--accent); color: white; }
 
-.pinned-ai-reply {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  padding: 8px 16px;
-  background: var(--ai-bubble);
-  color: var(--ai-bubble-ink);
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.pinned-ai-label {
-  flex: 0 0 auto;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.75;
-}
-
-.pinned-ai-reply p {
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Fond réactif discret (désactivable, voir #background-toggle) : une grille
-   géométrique fixe (l'IA) et des formes floues sombres (l'humain) qui
-   viennent s'y heurter — statique, sans animation, en dégradés CSS purs
-   (pas d'image) pour rester très léger. Opacité volontairement infime :
-   ne doit jamais mordre le contraste du texte dans les bulles au-dessus. */
+/* Fond réactif discret (désactivable, voir #background-toggle) : un réseau
+   de nœuds reliés par distance (même logique que le header tsParticles de
+   uneiaparjour.fr, voir buildReactiveBackgroundSvg dans app.js) et des
+   courbes floues sombres qui s'y superposent — statique, sans animation.
+   --reactive-bg est calculée une seule fois au chargement du script. */
 #messages {
   flex: 1;
   overflow-y: auto;
@@ -511,12 +485,9 @@ body {
   flex-direction: column;
   gap: 10px;
   background-color: var(--bg);
-  background-image:
-    repeating-linear-gradient(0deg, rgba(11, 11, 11, 0.035) 0px, rgba(11, 11, 11, 0.035) 1px, transparent 1px, transparent 40px),
-    repeating-linear-gradient(90deg, rgba(11, 11, 11, 0.035) 0px, rgba(11, 11, 11, 0.035) 1px, transparent 1px, transparent 40px),
-    radial-gradient(ellipse 340px 220px at 12% 18%, rgba(11, 11, 11, 0.05), transparent 70%),
-    radial-gradient(ellipse 260px 320px at 88% 78%, rgba(11, 11, 11, 0.045), transparent 70%),
-    radial-gradient(ellipse 300px 180px at 75% 8%, rgba(11, 11, 11, 0.035), transparent 70%);
+  background-image: var(--reactive-bg);
+  background-size: cover;
+  background-position: center;
 }
 
 #messages.bg-disabled { background-image: none; }
@@ -636,6 +607,20 @@ body {
 .synthesis-block { margin-bottom: 24px; }
 .synthesis-block:last-of-type { margin-bottom: 12px; }
 
+/* Apparition différée du reste de la synthèse après le score (voir
+   buildSynthesisRest dans app.js) : un fondu simple, pas une animation
+   élaborée, pour marquer une vraie séparation sans distraire. */
+.synthesis-rest {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.synthesis-rest.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .synthesis-block h2 {
   font-size: 15px;
   margin: 0 0 8px;
@@ -648,9 +633,46 @@ body {
   line-height: 1.4;
 }
 
-.score-compare {
+/* Score façon tableau d'affichage de match : les deux côtés reprennent les
+   couleurs déjà utilisées pour les bulles joueur/IA dans la conversation
+   (même association visuelle), plutôt qu'un simple duo de chiffres neutres. */
+.scoreboard {
   display: flex;
-  gap: 32px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin: 4px 0 10px;
+}
+
+.scoreboard-side {
+  flex: 1;
+  text-align: center;
+  padding: 18px 12px;
+}
+
+.scoreboard-side.player { background: var(--player-bubble); color: var(--ink); }
+.scoreboard-side.ai { background: var(--ai-bubble); color: var(--ai-bubble-ink); }
+
+.scoreboard-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  margin: 0 0 4px;
+}
+
+.scoreboard-value {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 1;
+  margin: 0;
+}
+
+.scoreboard-max {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 2px 0 0;
 }
 
 .score-label {
@@ -659,13 +681,6 @@ body {
   margin: 0 0 2px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-}
-
-.score-value {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0;
-  color: var(--accent);
 }
 
 .score-hint {

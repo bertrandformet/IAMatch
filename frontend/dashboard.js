@@ -35,7 +35,7 @@ const THEME_DEFINITIONS = {
   "faillibilité": "Le rapport à l'erreur et à l'incertitude : douter, se tromper consciemment, apprendre de ses erreurs.",
   "droit": "Le statut juridique et moral : droits, responsabilité légale, capacité à consentir ou à être jugé.",
   "perception": "Le rapport sensoriel au monde : voir, entendre, percevoir directement la réalité.",
-  "fonctionnement": "La base statistique/computationnelle d'un LLM : comment il produit du texte, apprend, traite l'information.",
+  "fonctionnement": "La base statistique/computationnelle d'un modèle de langage : comment il produit du texte, apprend, traite l'information.",
   "autre": "Ce qui ne rentre clairement dans aucun des autres thèmes.",
 };
 

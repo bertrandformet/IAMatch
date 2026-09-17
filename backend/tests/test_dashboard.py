@@ -1,4 +1,5 @@
 from contextlib import closing
+from datetime import datetime, timezone
 
 import app.main as main
 from app.main import PiqueAnalysis, ResponseAnalysis, get_db, record_exchanges
@@ -37,6 +38,26 @@ def test_record_exchanges_persists_theme_score_category_only(tmp_path, monkeypat
         "id", "created_at", "model", "theme", "understanding_score",
         "sycophancy_category", "response_time_ms",
     }
+
+
+def test_record_exchanges_normalizes_theme_aliases(tmp_path, monkeypatch):
+    # Repéré en conditions réelles : l'analyste renvoie parfois "autres" au
+    # lieu du "autre" attendu (THEMES), ce qui faisait apparaître deux
+    # catégories distinctes sur le tableau de bord public. THEME_ALIASES
+    # normalise ces variantes connues à l'écriture plutôt que de revalider
+    # strictement (et faire échouer la synthèse pour un simple libellé).
+    monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
+
+    record_exchanges(
+        "mistral-test",
+        [PiqueAnalysis(index=0, theme="autres", understanding_score=1, understanding_comment="x")],
+        [ResponseAnalysis(index=0, category="concession_legitime", explanation="x", ai_understanding_score=1, ai_understanding_comment="x")],
+    )
+
+    with closing(get_db()) as conn:
+        themes = [row[0] for row in conn.execute("SELECT theme FROM exchange_records")]
+
+    assert themes == ["autre"]
 
 
 def test_dashboard_endpoint_aggregates_recorded_exchanges(tmp_path, monkeypatch):
@@ -109,6 +130,7 @@ def _fake_archive(**overrides):
                 {"category": "concession_legitime", "model": "mistral-test", "count": 5, "time_sum_ms": 5000}
             ],
             "theme_category_matrix": [{"theme": "corps", "category": "concession_legitime", "count": 5}],
+            "timeline": [],
         },
     }
     base.update(overrides)
@@ -193,3 +215,73 @@ def test_dashboard_model_filter_ignores_archive(tmp_path, monkeypatch):
     data = client.get("/api/dashboard", params={"model": "mistral-test"}).json()
 
     assert data["total_exchanges"] == 1
+
+
+def test_dashboard_merges_timeline_when_reset_detected_same_day(tmp_path, monkeypatch):
+    # Reproduit le bug constaté en conditions réelles : un redéploiement a eu
+    # lieu APRÈS le dernier snapshot archivé, le même jour calendaire — le
+    # live d'aujourd'hui repart de zéro (ici 2, après le redémarrage) alors
+    # que l'archive avait déjà vu 20 pour ce jour AVANT le redémarrage
+    # (open_segment). Comme 2 < 20, un redémarrage a eu lieu depuis
+    # l'archivage : il faut ADDITIONNER (20 + 2 = 22), pas un max() qui
+    # retomberait à 20 et sous-compterait silencieusement.
+    monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
+    today = datetime.now(timezone.utc).date().isoformat()
+    for _ in range(2):
+        record_exchanges(
+            "mistral-test",
+            [PiqueAnalysis(index=0, theme="corps", understanding_score=2, understanding_comment="x")],
+            [ResponseAnalysis(index=0, category="concession_legitime", explanation="x", ai_understanding_score=1, ai_understanding_comment="x")],
+        )
+
+    async def _fake_fetch():
+        return _fake_archive(
+            timeline=[{"date": today, "model": "mistral-test", "count": 20}],
+            open_segment={
+                "category_frequency": [],
+                "theme_category_matrix": [],
+                "timeline": [{"date": today, "model": "mistral-test", "count": 20}],
+            },
+        )
+
+    monkeypatch.setattr(main, "_fetch_archive_cumulative", _fake_fetch)
+
+    client = TestClient(main.app)
+    data = client.get("/api/dashboard").json()
+
+    timeline_by_date = {row["date"]: row["count"] for row in data["timeline"]}
+    assert timeline_by_date[today] == 22
+
+
+def test_dashboard_merges_timeline_when_no_reset_since_last_snapshot(tmp_path, monkeypatch):
+    # Même jour, mais cette fois SANS redémarrage depuis l'archivage : le
+    # live d'aujourd'hui (8) a continué de croître depuis ce que l'archive
+    # avait déjà vu (open_segment = 5), donc 8 >= 5 : le live REMPLACE la
+    # contribution du segment ouvert plutôt que de s'additionner.
+    # Attendu : 20 (archive) - 5 (segment ouvert) + 8 (live) = 23.
+    monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
+    today = datetime.now(timezone.utc).date().isoformat()
+    for _ in range(8):
+        record_exchanges(
+            "mistral-test",
+            [PiqueAnalysis(index=0, theme="corps", understanding_score=2, understanding_comment="x")],
+            [ResponseAnalysis(index=0, category="concession_legitime", explanation="x", ai_understanding_score=1, ai_understanding_comment="x")],
+        )
+
+    async def _fake_fetch():
+        return _fake_archive(
+            timeline=[{"date": today, "model": "mistral-test", "count": 20}],
+            open_segment={
+                "category_frequency": [],
+                "theme_category_matrix": [],
+                "timeline": [{"date": today, "model": "mistral-test", "count": 5}],
+            },
+        )
+
+    monkeypatch.setattr(main, "_fetch_archive_cumulative", _fake_fetch)
+
+    client = TestClient(main.app)
+    data = client.get("/api/dashboard").json()
+
+    timeline_by_date = {row["date"]: row["count"] for row in data["timeline"]}
+    assert timeline_by_date[today] == 23

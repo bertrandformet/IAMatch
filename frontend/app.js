@@ -6,6 +6,83 @@
 // ROUND_SYSTEM_PROMPT côté backend — la relance de l'IA, elle, reste au "je"
 // puisqu'elle compose une phrase complète, sans ce problème d'élision).
 
+// Fond réactif discret (désactivable, voir #background-toggle) : reproduit
+// la logique tsParticles réelle du header de uneiaparjour.fr (nœuds reliés
+// par distance ≤ un seuil, pas par "k plus proches voisins" — c'est ce qui
+// donne le maillage triangulé du site) plutôt qu'une grille, avec des
+// courbes floues sombres qui s'y superposent. Prototypé et réglé dans une
+// maquette Claude Design avant d'être recodé ici ; les 3 constantes
+// (NET_OPACITY/BLOB_OPACITY/BLUR) reprennent les valeurs choisies dans
+// cette maquette. Statique (aucune animation), calculé une seule fois au
+// chargement du script (PRNG déterministe, jamais Math.random, pour un
+// rendu stable) et injecté via la variable CSS --reactive-bg plutôt qu'en
+// DOM, pour rester compatible avec le simple toggle .bg-disabled existant.
+function buildReactiveBackgroundSvg() {
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  // Champ continu (pas de bruit aléatoire) qui module l'intensité du réseau
+  // sur toute la surface : de "très léger" à l'opacité pleine, jamais nul,
+  // pour que le maillage couvre tout l'écran sans zone franchement vide.
+  function fieldIntensity(x, y, W, H) {
+    const nx = x / W, ny = y / H;
+    return 0.5 + 0.5 * Math.sin(nx * 6.2 + ny * 2.4) * Math.cos(ny * 4.8 - nx * 3.1);
+  }
+
+  const rand = mulberry32(7);
+  const W = 430, H = 620;
+  const COUNT = 190;
+  const LINK_DISTANCE = 55;
+  const MIN_FACTOR = 0.12;
+  const NET_OPACITY = 0.15;
+  const BLOB_OPACITY = 0.06;
+  const BLUR = 62;
+
+  const nodes = [];
+  for (let i = 0; i < COUNT; i++) {
+    const x = rand() * W;
+    const y = rand() * H;
+    const field = MIN_FACTOR + (1 - MIN_FACTOR) * fieldIntensity(x, y, W, H);
+    nodes.push({ x, y, r: 1 + rand() * 2, field });
+  }
+
+  let edgesSvg = "";
+  let nodesSvg = "";
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    nodesSvg += `<circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${n.r.toFixed(2)}" opacity="${n.field.toFixed(3)}"/>`;
+    for (let j = i + 1; j < nodes.length; j++) {
+      const o = nodes[j];
+      const d = Math.hypot(o.x - n.x, o.y - n.y);
+      if (d < LINK_DISTANCE) {
+        const localField = (n.field + o.field) / 2;
+        const opacity = (1 - d / LINK_DISTANCE) * localField;
+        edgesSvg += `<line x1="${n.x.toFixed(1)}" y1="${n.y.toFixed(1)}" x2="${o.x.toFixed(1)}" y2="${o.y.toFixed(1)}" opacity="${opacity.toFixed(3)}"/>`;
+      }
+    }
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">` +
+    `<defs><filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${BLUR}"/></filter></defs>` +
+    `<g stroke="#2a78d6" stroke-width="1" opacity="${NET_OPACITY}">${edgesSvg}</g>` +
+    `<g fill="#2a78d6" opacity="${NET_OPACITY}">${nodesSvg}</g>` +
+    `<g filter="url(#b)" fill="#0b0b0b" opacity="${BLOB_OPACITY}">` +
+    `<path d="M -40,90 C 40,20 120,140 210,70 C 300,0 340,110 420,60 L 420,-40 L -40,-40 Z"/>` +
+    `<ellipse cx="70" cy="430" rx="150" ry="95" transform="rotate(-18 70 430)"/>` +
+    `<path d="M 260,520 C 340,470 420,540 470,500 C 500,610 430,640 360,610 C 300,585 240,560 260,520 Z"/>` +
+    `<ellipse cx="360" cy="180" rx="90" ry="60" transform="rotate(25 360 180)"/>` +
+    `</g></svg>`;
+
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+document.documentElement.style.setProperty("--reactive-bg", buildReactiveBackgroundSvg());
+
 const setupScreen = document.getElementById("setup-screen");
 const gameScreen = document.getElementById("game-screen");
 const modeGroup = document.getElementById("mode-group");
@@ -40,8 +117,6 @@ const timerSr = document.getElementById("timer-sr");
 const collectifBanner = document.getElementById("collectif-banner");
 const collectifPhaseLabel = document.getElementById("collectif-phase-label");
 const collectifSkipBtn = document.getElementById("collectif-skip-btn");
-const pinnedAiReply = document.getElementById("pinned-ai-reply");
-const pinnedAiText = document.getElementById("pinned-ai-text");
 const neuralAvatar = document.getElementById("neural-avatar");
 const messagesEl = document.getElementById("messages");
 const piqueInput = document.getElementById("pique-input");
@@ -110,7 +185,7 @@ const THEME_DEFINITIONS = {
   "faillibilité": "Le rapport à l'erreur et à l'incertitude : douter, se tromper consciemment, apprendre de ses erreurs.",
   "droit": "Le statut juridique et moral : droits, responsabilité légale, capacité à consentir ou à être jugé.",
   "perception": "Le rapport sensoriel au monde : voir, entendre, percevoir directement la réalité.",
-  "fonctionnement": "La base statistique/computationnelle d'un LLM : comment il produit du texte, apprend, traite l'information.",
+  "fonctionnement": "La base statistique/computationnelle d'un modèle de langage : comment il produit du texte, apprend, traite l'information.",
   "autre": "Ce qui ne rentre clairement dans aucun des autres thèmes.",
 };
 
@@ -346,7 +421,7 @@ function startCollectifPhase(index) {
   state.collectifTimeLeft = phase.duration;
   setComposerEnabled(phase.composerEnabled);
   collectifSkipBtn.style.display = phase.isLast ? "none" : "inline-block";
-  timerLine.style.display = "block";
+  timerLine.style.display = "flex";
   renderCollectifPhase();
   state.collectifInterval = setInterval(() => {
     state.collectifTimeLeft -= 1;
@@ -358,9 +433,17 @@ function startCollectifPhase(index) {
   }, 1000);
 }
 
+// "1 min", "3 min" ou "45s" selon la durée — dérivé de phase.duration plutôt
+// qu'écrit en dur dans COLLECTIF_PHASES, pour ne jamais désynchroniser
+// l'affichage du vrai minuteur si une durée change.
+function formatDuration(seconds) {
+  return seconds % 60 === 0 ? `${seconds / 60} min` : `${seconds}s`;
+}
+
 function renderCollectifPhase() {
   const phase = COLLECTIF_PHASES[state.collectifPhase];
-  collectifPhaseLabel.textContent = `Étape ${state.collectifPhase + 1}/${COLLECTIF_PHASES.length} · ${phase.label}`;
+  collectifPhaseLabel.textContent =
+    `Étape ${state.collectifPhase + 1}/${COLLECTIF_PHASES.length} · ${phase.label} (${formatDuration(phase.duration)})`;
   const left = Math.max(state.collectifTimeLeft, 0);
   renderTimerLine(left, phase.duration);
   timerSr.textContent = `${left} secondes restantes pour cette étape.`;
@@ -407,7 +490,6 @@ function beginGame() {
   updateRoundCounter();
   collectifBanner.style.display = state.mode === "collectif" ? "flex" : "none";
   messagesEl.classList.toggle("bg-disabled", !state.backgroundEnabled);
-  pinnedAiReply.style.display = "none";
 
   setupScreen.classList.remove("active");
   gameScreen.classList.add("active");
@@ -417,7 +499,7 @@ function beginGame() {
   if (state.mode === "collectif") {
     startCollectifPhase(0);
   } else if (state.timerEnabled) {
-    timerLine.style.display = "block";
+    timerLine.style.display = "flex";
     startTimer();
     piqueInput.focus();
   } else {
@@ -561,8 +643,6 @@ async function sendPique() {
 
     loadingRow.remove();
     addBubble("assistant", data.reply);
-    pinnedAiText.textContent = data.reply;
-    pinnedAiReply.style.display = "flex";
 
     state.history.push({ role: "user", content: text });
     state.history.push({ role: "assistant", content: data.reply });
@@ -590,7 +670,7 @@ async function sendPique() {
     } else {
       piqueInput.focus();
       if (state.timerEnabled && state.currentRound <= state.totalRounds) {
-        timerLine.style.display = "block";
+        timerLine.style.display = "flex";
         startTimer();
       }
     }
@@ -626,7 +706,6 @@ async function endGame() {
   composer.style.display = "none";
   timerLine.style.display = "none";
   collectifBanner.style.display = "none";
-  pinnedAiReply.style.display = "none";
   stopCollectifPhases();
 
   const loadingBanner = document.createElement("div");
@@ -700,6 +779,11 @@ function renderSynthesis(data) {
   const panel = document.createElement("div");
   panel.className = "synthesis-panel";
 
+  // Score affiché en premier, façon tableau d'affichage de match (demande
+  // explicite : séparé du reste de la synthèse par une apparition autonome,
+  // pas juste le premier bloc d'une longue liste) — le reste (catégories,
+  // détail par tour) n'apparaît qu'ensuite, avec un léger différé (voir
+  // plus bas), jamais construit dans le même instant.
   const totalPlayerScore = data.piques.reduce((sum, p) => sum + p.understanding_score, 0);
   const maxPlayerScore = data.piques.length * 2;
   const totalAiScore = data.responses.reduce((sum, r) => sum + r.ai_understanding_score, 0);
@@ -707,22 +791,24 @@ function renderSynthesis(data) {
   const scoreBlock = document.createElement("div");
   scoreBlock.className = "synthesis-block";
   scoreBlock.innerHTML = `
-    <h2>Score de compréhension des LLM</h2>
-    <div class="score-compare">
-      <div>
-        <p class="score-label">Joueur</p>
-        <p class="score-value">${totalPlayerScore} / ${maxPlayerScore}</p>
+    <h2>Score de compréhension des modèles de langage</h2>
+    <div class="scoreboard">
+      <div class="scoreboard-side player">
+        <p class="scoreboard-label">Joueur</p>
+        <p class="scoreboard-value">${totalPlayerScore}</p>
+        <p class="scoreboard-max">/ ${maxPlayerScore}</p>
       </div>
-      <div>
-        <p class="score-label">IA</p>
-        <p class="score-value">${totalAiScore} / ${maxAiScore}</p>
+      <div class="scoreboard-side ai">
+        <p class="scoreboard-label">IA</p>
+        <p class="scoreboard-value">${totalAiScore}</p>
+        <p class="scoreboard-max">/ ${maxAiScore}</p>
       </div>
     </div>
-    <p class="score-hint">Chaque affirmation reflète-t-elle une compréhension juste de ce qu'un LLM peut ou ne peut pas faire, des deux côtés du match ?</p>
+    <p class="score-hint">Chaque affirmation reflète-t-elle une compréhension juste de ce qu'un modèle de langage peut ou ne peut pas faire, des deux côtés du match ?</p>
     <details class="score-criteria">
       <summary>Comment ce score est-il calculé ?</summary>
       <ul>
-        <li><strong>0</strong> — repose sur une idée reçue sur les LLM (leur prêter une conscience, une intention, un vécu qu'ils n'ont pas, ou au contraire leur retirer une capacité réelle)</li>
+        <li><strong>0</strong> — repose sur une idée reçue sur les modèles de langage (leur prêter une conscience, une intention, un vécu qu'ils n'ont pas, ou au contraire leur retirer une capacité réelle)</li>
         <li><strong>1</strong> — plausible, mais imprécis sur leurs capacités réelles</li>
         <li><strong>2</strong> — reflète une compréhension juste de leurs capacités et limites</li>
       </ul>
@@ -734,6 +820,19 @@ function renderSynthesis(data) {
     </details>
   `;
   panel.appendChild(scoreBlock);
+  messagesEl.appendChild(panel);
+  panel.scrollIntoView({ block: "start", behavior: "smooth" });
+
+  buildSynthesisRest(panel, data);
+}
+
+// Construit la partie "après le score" (catégories + détail par tour) et
+// l'ajoute avec un léger différé et un fondu, pour que le score se voie
+// comme une apparition à part entière plutôt que le début d'un long bloc
+// qui arrive tout d'un coup.
+function buildSynthesisRest(panel, data) {
+  const rest = document.createElement("div");
+  rest.className = "synthesis-rest";
 
   const themeCounts = {};
   THEMES.forEach((t) => (themeCounts[t] = 0));
@@ -763,7 +862,7 @@ function renderSynthesis(data) {
 
   radarBlock.appendChild(buildBarSection("Joueur : thèmes des répliques", themeItems));
   radarBlock.appendChild(buildBarSection("IA : catégories de réponse", categoryItems));
-  panel.appendChild(radarBlock);
+  rest.appendChild(radarBlock);
 
   const detailBlock = document.createElement("div");
   detailBlock.className = "synthesis-block";
@@ -809,15 +908,17 @@ function renderSynthesis(data) {
 
     detailBlock.appendChild(pair);
   });
-  panel.appendChild(detailBlock);
+  rest.appendChild(detailBlock);
 
-  addReplayButton(panel);
+  addReplayButton(rest);
 
-  messagesEl.appendChild(panel);
-  // Ancré sur le début de la synthèse (le score), pas sur la fin du long
-  // panneau qui vient d'être ajouté : sans ça, le joueur devait remonter
-  // manuellement pour voir son score après la fin de partie.
-  panel.scrollIntoView({ block: "start", behavior: "smooth" });
+  // Différé court plutôt qu'immédiat : le temps que le score s'affiche
+  // comme un vrai temps fort avant que le reste n'apparaisse. Fondu en CSS
+  // (voir .synthesis-rest) déclenché juste après l'ajout au DOM.
+  setTimeout(() => {
+    panel.appendChild(rest);
+    requestAnimationFrame(() => rest.classList.add("is-revealed"));
+  }, 900);
 }
 
 // items : [{label: string, value: number}] — générique, utilisé pour les
@@ -826,11 +927,15 @@ function renderSynthesis(data) {
 // la forme dégénérait en une ou deux pointes fines, illisible. Des barres
 // triées par fréquence gèrent nativement les valeurs à 0 et restent lisibles
 // même avec un seul tour joué — même langage visuel que le dashboard public.
+// N'affiche que les catégories réellement rencontrées cette partie : sur 5 à
+// 10 tours, la plupart des catégories fixes restent à 0 et n'apportaient
+// qu'une longue liste de barres vides sans intérêt pour cette partie précise.
 function buildBarSection(title, items) {
   const section = document.createElement("div");
   section.className = "bar-section";
-  const maxValue = Math.max(1, ...items.map((it) => it.value));
-  const sorted = [...items].sort((a, b) => b.value - a.value);
+  const played = items.filter((it) => it.value > 0);
+  const maxValue = Math.max(1, ...played.map((it) => it.value));
+  const sorted = [...played].sort((a, b) => b.value - a.value);
   const rows = sorted
     .map((item) => {
       const pct = Math.round((item.value / maxValue) * 100);
