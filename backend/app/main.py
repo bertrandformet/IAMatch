@@ -14,6 +14,7 @@ import os
 import re
 import sqlite3
 import time
+import uuid
 from collections import defaultdict, deque
 from contextlib import closing
 from datetime import datetime, timezone
@@ -26,6 +27,15 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, ValidationError
+
+# Identifiant unique généré à chaque démarrage du process (donc à chaque
+# redéploiement, la base SQLite étant elle-même recréée à ce moment-là) —
+# signal fiable pour savoir si le live d'un instant donné appartient encore
+# au même segment qu'un snapshot archivé, plutôt que de le déduire d'une
+# comparaison de comptes (voir _merge_category_frequency et l'incident qui a
+# motivé ce changement : deux segments différents peuvent, par coïncidence,
+# avoir exactement le même compte à l'instant de la comparaison).
+BOOT_ID = uuid.uuid4().hex
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(ROOT_DIR / ".env")
@@ -751,7 +761,26 @@ async def _fetch_archive_cumulative() -> Optional[dict]:
     return data
 
 
-def _merge_category_frequency(live_rows: list, archive: Optional[dict]) -> list:
+def _same_live_segment(archive: Optional[dict]) -> bool:
+    """Le live actuel est-il encore le même segment que celui déjà vu par le
+    dernier snapshot archivé (donc à remplacer), ou un nouveau segment né
+    d'un redémarrage depuis (donc à additionner) ?
+
+    Auparavant déduit d'une comparaison de comptes (live >= segment ouvert
+    => pas de redémarrage) : ambigu par construction, deux segments
+    DIFFÉRENTS pouvant coïncidentellement atteindre le même compte au moment
+    de la comparaison — constaté en conditions réelles sur la timeline
+    (sous-comptage silencieux du jour courant). BOOT_ID, généré une fois par
+    démarrage du process (donc par redéploiement), tranche sans ambiguïté :
+    même BOOT_ID que celui vu par le snapshot = certainement le même
+    segment, différent = certainement un redémarrage depuis."""
+    if not archive:
+        return False
+    open_boot_id = archive.get("open_segment", {}).get("boot_id")
+    return open_boot_id is not None and open_boot_id == BOOT_ID
+
+
+def _merge_category_frequency(live_rows: list, archive: Optional[dict], same_segment: bool) -> list:
     if not archive:
         return live_rows
     archived_by_key = {(r["category"], r["model"]): r for r in archive.get("category_frequency", [])}
@@ -782,7 +811,7 @@ def _merge_category_frequency(live_rows: list, archive: Optional[dict]) -> list:
             else 0
         )
 
-        if live_count >= open_count:
+        if same_segment:
             # Pas de redémarrage depuis le dernier archivage : le live
             # remplace la contribution du segment en cours.
             count = archived_count - open_count + live_count
@@ -804,7 +833,7 @@ def _merge_category_frequency(live_rows: list, archive: Optional[dict]) -> list:
     return list(merged.values())
 
 
-def _merge_theme_matrix(live_rows: list, archive: Optional[dict]) -> list:
+def _merge_theme_matrix(live_rows: list, archive: Optional[dict], same_segment: bool) -> list:
     if not archive:
         return live_rows
     archived_by_key = {(r["theme"], r["category"]): r["count"] for r in archive.get("theme_category_matrix", [])}
@@ -819,7 +848,7 @@ def _merge_theme_matrix(live_rows: list, archive: Optional[dict]) -> list:
         archived_count = archived_by_key.get(key, 0)
         open_count = open_by_key.get(key, 0)
         live_count = live_by_key.get(key, 0)
-        if live_count >= open_count:
+        if same_segment:
             count = archived_count - open_count + live_count
         else:
             count = archived_count + live_count
@@ -829,15 +858,14 @@ def _merge_theme_matrix(live_rows: list, archive: Optional[dict]) -> list:
     return list(merged.values())
 
 
-def _merge_timeline(live_rows: list, archive: Optional[dict]) -> list:
+def _merge_timeline(live_rows: list, archive: Optional[dict], same_segment: bool) -> list:
     """Même logique remplacer/additionner que _merge_category_frequency (voir
-    open_segment) — un simple max() par (date, modèle) sous-comptait
-    silencieusement le jour courant quand un redémarrage survenait après le
-    dernier snapshot archivé (constaté en conditions réelles : redéploiement
-    en cours de journée juste après un archivage). Une date déjà passée au
-    moment du dernier snapshot n'a par construction pas de segment ouvert
-    (open_count reste à 0), donc cette même logique s'y réduit à une simple
-    addition — sans branche séparée à maintenir."""
+    _same_live_segment) — un simple max() par (date, modèle), ou une
+    comparaison de comptes par clé, sous-comptaient silencieusement le jour
+    courant quand un redémarrage survenait après le dernier snapshot archivé
+    ET que le nouveau segment atteignait par coïncidence le même compte que
+    l'ancien (constaté en conditions réelles). BOOT_ID tranche une bonne
+    fois, la même décision pour toutes les clés."""
     if not archive:
         return live_rows
     archived_by_key = {(r["date"], r["model"]): r["count"] for r in archive.get("timeline", [])}
@@ -852,7 +880,7 @@ def _merge_timeline(live_rows: list, archive: Optional[dict]) -> list:
         archived_count = archived_by_key.get(key, 0)
         open_count = open_by_key.get(key, 0)
         live_count = live_by_key.get(key, 0)
-        if live_count >= open_count:
+        if same_segment:
             count = archived_count - open_count + live_count
         else:
             count = archived_count + live_count
@@ -943,9 +971,10 @@ async def dashboard(model: Optional[str] = None):
     # reste en direct (depuis le dernier redémarrage) pour ce cas précis.
     if model is None:
         archive = await _fetch_archive_cumulative()
-        category_frequency = _merge_category_frequency(category_frequency, archive)
-        theme_category_matrix = _merge_theme_matrix(theme_category_matrix, archive)
-        timeline = _merge_timeline(timeline, archive)
+        same_segment = _same_live_segment(archive)
+        category_frequency = _merge_category_frequency(category_frequency, archive, same_segment)
+        theme_category_matrix = _merge_theme_matrix(theme_category_matrix, archive, same_segment)
+        timeline = _merge_timeline(timeline, archive, same_segment)
         if archive:
             available_models = sorted(set(available_models) | set(archive.get("available_models", [])))
         total = sum(row["count"] for row in category_frequency)
@@ -953,6 +982,11 @@ async def dashboard(model: Optional[str] = None):
     return {
         "available_models": available_models,
         "selected_model": model,
+        # Identifiant du segment live actuel (voir BOOT_ID/_same_live_segment) :
+        # exposé pour que le prochain snapshot archivé puisse l'enregistrer
+        # comme open_segment.boot_id, et permettre au backend de trancher
+        # sans ambiguïté au tour suivant si un redémarrage a eu lieu entre-temps.
+        "live_boot_id": BOOT_ID,
         "total_exchanges": total,
         "category_frequency": category_frequency,
         "theme_category_matrix": theme_category_matrix,

@@ -112,7 +112,7 @@ def rebuild():
             "category_frequency": [],
             "theme_category_matrix": [],
             "timeline": [],
-            "open_segment": {"category_frequency": [], "theme_category_matrix": [], "timeline": []},
+            "open_segment": {"category_frequency": [], "theme_category_matrix": [], "timeline": [], "boot_id": None},
             "snapshots_used": 0,
         }
 
@@ -214,6 +214,13 @@ def rebuild():
             "category_frequency": open_segment_cat_freq,
             "theme_category_matrix": open_segment_theme,
             "timeline": open_segment_timeline,
+            # BOOT_ID vu par le DERNIER snapshot (voir backend/app/main.py) :
+            # permet au backend de savoir, sans ambiguïté de comptes, si le
+            # live actuel est encore ce même segment ou un nouveau depuis un
+            # redémarrage. Absent sur un snapshot pris avant l'ajout de ce
+            # champ : le backend traite alors prudemment comme "redémarrage"
+            # (additionne plutôt que remplacer, jamais de sous-comptage).
+            "boot_id": snapshots[-1][1].get("live_boot_id"),
         },
         "snapshots_used": len(snapshots),
     }

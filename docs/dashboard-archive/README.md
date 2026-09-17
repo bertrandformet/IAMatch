@@ -58,10 +58,22 @@ son total, la valeur du dernier segment archivé (potentiellement encore
 ouvert si aucun redémarrage n'a eu lieu depuis). Additionner naïvement ce
 total au live compterait ce segment deux fois. `open_segment` expose donc
 séparément la valeur de ce dernier segment, pour que le backend puisse soit
-la **remplacer** par le live (compte live ≥ segment ouvert : pas de
-redémarrage depuis), soit l'**additionner** (compte live < segment ouvert :
-un redémarrage a eu lieu depuis l'archivage, le live est un nouveau
-segment). Logique dans `backend/app/main.py` (`_merge_category_frequency`,
+la **remplacer** par le live (pas de redémarrage depuis l'archivage), soit
+l'**additionner** (un redémarrage a eu lieu, le live est un nouveau
+segment).
+
+Ce choix remplacer/additionner reposait initialement sur une comparaison de
+comptes (live ≥ segment ouvert ⇒ pas de redémarrage) — ambigu par
+construction : deux segments *différents* peuvent atteindre par coïncidence
+le même compte au moment de la comparaison (constaté en conditions réelles
+sur la timeline, sous-comptage silencieux du jour courant). Remplacé par
+`BOOT_ID` : un identifiant généré une fois par démarrage du process
+(`backend/app/main.py`), donc à chaque redéploiement puisque la base SQLite
+repart de zéro au même moment. `open_segment.boot_id` enregistre le
+`BOOT_ID` vu par le dernier snapshot ; le backend compare ce boot_id à celui
+du live actuel, une seule décision valable pour toutes les clés (catégories,
+thèmes, dates) plutôt qu'une comparaison par clé. Logique dans
+`backend/app/main.py` (`_same_live_segment`, `_merge_category_frequency`,
 `_merge_theme_matrix`, `_merge_timeline`), testée dans
 `backend/tests/test_dashboard.py`.
 

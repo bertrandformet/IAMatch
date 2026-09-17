@@ -118,6 +118,9 @@ def test_dashboard_endpoint_filters_by_model(tmp_path, monkeypatch):
 
 
 def _fake_archive(**overrides):
+    # boot_id égal à main.BOOT_ID par défaut : simule "pas de redémarrage
+    # depuis l'archivage" (même segment live). Les tests de redémarrage
+    # passent explicitement un open_segment avec un boot_id différent.
     base = {
         "available_models": ["mistral-test"],
         "category_frequency": [
@@ -131,6 +134,7 @@ def _fake_archive(**overrides):
             ],
             "theme_category_matrix": [{"theme": "corps", "category": "concession_legitime", "count": 5}],
             "timeline": [],
+            "boot_id": main.BOOT_ID,
         },
     }
     base.update(overrides)
@@ -138,11 +142,10 @@ def _fake_archive(**overrides):
 
 
 def test_dashboard_merges_archive_when_no_reset_since_last_snapshot(tmp_path, monkeypatch):
-    # Le dernier snapshot archivé avait déjà vu 5 échanges pour cette clé
-    # (open_segment) ; le live en a maintenant 8 pour la même clé : comme
-    # 8 >= 5, aucun redémarrage n'a eu lieu depuis l'archivage, le live
-    # REMPLACE la contribution du segment ouvert plutôt que de s'additionner.
-    # Attendu : 20 (archive) - 5 (segment ouvert) + 8 (live) = 23.
+    # boot_id identique (voir _fake_archive) : aucun redémarrage depuis
+    # l'archivage, le live REMPLACE la contribution du segment ouvert (5)
+    # plutôt que de s'additionner. Attendu : 20 (archive) - 5 (segment
+    # ouvert) + 8 (live) = 23.
     monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
     for _ in range(8):
         record_exchanges(
@@ -170,12 +173,13 @@ def test_dashboard_merges_archive_when_no_reset_since_last_snapshot(tmp_path, mo
 
 
 def test_dashboard_merges_archive_when_reset_detected(tmp_path, monkeypatch):
-    # Le live n'a que 3 échanges pour cette clé, alors que le dernier
-    # snapshot archivé en avait déjà vu 5 (open_segment) : 3 < 5 signifie
-    # qu'un redémarrage a eu lieu depuis l'archivage (le compteur SQLite est
-    # reparti de zéro) — le live est un NOUVEAU segment, à additionner.
-    # Attendu : 20 (archive, segment ouvert déjà inclus) + 3 (nouveau
-    # segment live) = 23.
+    # boot_id différent de main.BOOT_ID (voir override ci-dessous) : un
+    # redémarrage a eu lieu depuis l'archivage (nouveau process, donc
+    # nouveau BOOT_ID), le live est un NOUVEAU segment, à additionner —
+    # quel que soit son compte, même s'il coïncidait avec l'ancien (c'est
+    # justement l'ambiguïté qu'une comparaison de comptes ne peut pas lever,
+    # voir _same_live_segment). Attendu : 20 (archive, segment ouvert déjà
+    # inclus) + 3 (nouveau segment live) = 23.
     monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
     for _ in range(3):
         record_exchanges(
@@ -185,7 +189,16 @@ def test_dashboard_merges_archive_when_reset_detected(tmp_path, monkeypatch):
         )
 
     async def _fake_fetch():
-        return _fake_archive()
+        return _fake_archive(
+            open_segment={
+                "category_frequency": [
+                    {"category": "concession_legitime", "model": "mistral-test", "count": 5, "time_sum_ms": 5000}
+                ],
+                "theme_category_matrix": [{"theme": "corps", "category": "concession_legitime", "count": 5}],
+                "timeline": [],
+                "boot_id": "some-other-boot-id",
+            },
+        )
 
     monkeypatch.setattr(main, "_fetch_archive_cumulative", _fake_fetch)
 
@@ -222,9 +235,10 @@ def test_dashboard_merges_timeline_when_reset_detected_same_day(tmp_path, monkey
     # lieu APRÈS le dernier snapshot archivé, le même jour calendaire — le
     # live d'aujourd'hui repart de zéro (ici 2, après le redémarrage) alors
     # que l'archive avait déjà vu 20 pour ce jour AVANT le redémarrage
-    # (open_segment). Comme 2 < 20, un redémarrage a eu lieu depuis
-    # l'archivage : il faut ADDITIONNER (20 + 2 = 22), pas un max() qui
-    # retomberait à 20 et sous-compterait silencieusement.
+    # (open_segment). boot_id différent (nouveau process) : il faut
+    # ADDITIONNER (20 + 2 = 22), jamais un simple max() ni une comparaison de
+    # comptes qui sous-compteraient silencieusement si le nouveau segment
+    # atteignait par coïncidence un total proche de l'ancien.
     monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
     today = datetime.now(timezone.utc).date().isoformat()
     for _ in range(2):
@@ -241,6 +255,7 @@ def test_dashboard_merges_timeline_when_reset_detected_same_day(tmp_path, monkey
                 "category_frequency": [],
                 "theme_category_matrix": [],
                 "timeline": [{"date": today, "model": "mistral-test", "count": 20}],
+                "boot_id": "some-other-boot-id",
             },
         )
 
@@ -254,11 +269,10 @@ def test_dashboard_merges_timeline_when_reset_detected_same_day(tmp_path, monkey
 
 
 def test_dashboard_merges_timeline_when_no_reset_since_last_snapshot(tmp_path, monkeypatch):
-    # Même jour, mais cette fois SANS redémarrage depuis l'archivage : le
-    # live d'aujourd'hui (8) a continué de croître depuis ce que l'archive
-    # avait déjà vu (open_segment = 5), donc 8 >= 5 : le live REMPLACE la
-    # contribution du segment ouvert plutôt que de s'additionner.
-    # Attendu : 20 (archive) - 5 (segment ouvert) + 8 (live) = 23.
+    # Même jour, boot_id identique (voir _fake_archive) : aucun redémarrage
+    # depuis l'archivage, le live (8) REMPLACE la contribution du segment
+    # ouvert (5) plutôt que de s'additionner. Attendu : 20 (archive) - 5
+    # (segment ouvert) + 8 (live) = 23.
     monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
     today = datetime.now(timezone.utc).date().isoformat()
     for _ in range(8):
@@ -275,6 +289,7 @@ def test_dashboard_merges_timeline_when_no_reset_since_last_snapshot(tmp_path, m
                 "category_frequency": [],
                 "theme_category_matrix": [],
                 "timeline": [{"date": today, "model": "mistral-test", "count": 5}],
+                "boot_id": main.BOOT_ID,
             },
         )
 
