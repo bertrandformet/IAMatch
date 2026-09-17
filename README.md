@@ -7,7 +7,7 @@ après coup, jamais pendant la partie, pour ne pas influencer le match en cours.
 voir si les affirmations du joueur reflètent une compréhension juste de ce qu'est un LLM, et
 observer comment l'IA y réagit.
 
-Projet [Une IA par jour](https://uneiaparjour.fr).
+Projet de [Bertrand Formet](https://www.linkedin.com/in/bertrandformet/).
 
 ## Principe
 
@@ -84,7 +84,7 @@ ALBERT_API_KEY=test-key .venv/bin/python -m pytest
 ## Licence
 
 Contenu et code sous licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.fr),
-[Une IA par jour](https://uneiaparjour.fr). Contact : contact@uneiaparjour.fr
+[Bertrand Formet](https://www.linkedin.com/in/bertrandformet/). Contact : [profil LinkedIn](https://www.linkedin.com/in/bertrandformet/)
 
 Son de validation à l'envoi d'une pique (`frontend/sounds/envoi.wav`) : « Message envoyé »,
 [LaSonothèque.fr](https://lasonotheque.org/), libre de droits (CC0/domaine public), attribution
