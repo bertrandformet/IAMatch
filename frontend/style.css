@@ -26,7 +26,12 @@ body {
   color: var(--ink);
 }
 
-.screen { display: none; min-height: 100vh; }
+/* Pas de min-height:100vh partagée : #game-screen fixe déjà sa propre
+   hauteur exacte plus bas, et l'imposer aussi à #setup-screen forçait le
+   footer à toujours être au moins un plein écran plus bas que la carte —
+   invisible en pratique, l'écran centré ne laissant deviner aucun contenu
+   en dessous. */
+.screen { display: none; }
 .screen.active { display: flex; flex-direction: column; }
 
 /* --- Écran de configuration --- */
@@ -368,8 +373,14 @@ body {
 .btn-danger { background: var(--danger); color: white; }
 
 /* --- Écran de jeu --- */
+/* Même largeur que .setup-card (420px) : sans ça, l'écran de jeu passait en
+   plein écran sur desktop juste après un accueil au format "carte mobile"
+   centrée, un décalage de format perceptible en pleine partie. */
 #game-screen {
   height: 100vh;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
 }
 
 .game-header {
