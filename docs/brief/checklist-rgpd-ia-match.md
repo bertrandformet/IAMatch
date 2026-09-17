@@ -70,7 +70,7 @@ Les cases sont cochées à partir de ce qui a été arrêté dans le brief de d�
 
 | Critère | Référence | Réponse | Raison de la non-conformité |
 |---|---|---|---|
-| Un moyen de contact est indiqué pour toute question relative aux données. | Art. 13.1.b RGPD | ☑ **Vrai** | contact@uneiaparjour.fr indiqué sur la page « Anonymisation » et dans le footer présent sur toutes les pages. |
+| Un moyen de contact est indiqué pour toute question relative aux données. | Art. 13.1.b RGPD | ☑ **Vrai** | Lien de contact (profil LinkedIn de Bertrand Formet) indiqué sur la page « Anonymisation » et dans le footer présent sur toutes les pages — remplace l'ancien contact@uneiaparjour.fr suite au transfert du projet sur le compte personnel. |
 | L'absence de droit d'accès/suppression individuel — de fait, puisqu'aucune donnée n'est identifiante — est explicitement expliquée plutôt que laissée implicite. | Art. 15-17 RGPD, considérant 57 | ☑ **Vrai** | Point prévu pour la page « Anonymisation ». |
 
 ---
