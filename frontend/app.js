@@ -109,6 +109,11 @@ const consentAcceptBtn = document.getElementById("consent-accept-btn");
 const soundToggle = document.getElementById("sound-toggle");
 const backgroundToggle = document.getElementById("background-toggle");
 
+const quitGameBtn = document.getElementById("quit-game-btn");
+const quitConfirmModal = document.getElementById("quit-confirm-modal");
+const quitCancelBtn = document.getElementById("quit-cancel-btn");
+const quitConfirmBtn = document.getElementById("quit-confirm-btn");
+
 const roundCounterEl = document.getElementById("round-counter");
 const modelNameLabel = document.getElementById("model-name-label");
 const timerLine = document.getElementById("timer-line");
@@ -397,6 +402,22 @@ consentAcceptBtn.addEventListener("click", () => {
   state.backgroundEnabled = backgroundToggle.checked;
   consentModal.style.display = "none";
   beginGame();
+});
+
+// Abandon d'une partie en cours : aucune sauvegarde possible (les échanges
+// ne sont enregistrés qu'à la synthèse finale, voir endGame), donc quitter
+// avant la fin perd réellement la partie — d'où la confirmation explicite
+// plutôt qu'un retour direct à l'accueil.
+quitGameBtn.addEventListener("click", () => {
+  quitConfirmModal.style.display = "flex";
+});
+
+quitCancelBtn.addEventListener("click", () => {
+  quitConfirmModal.style.display = "none";
+});
+
+quitConfirmBtn.addEventListener("click", () => {
+  window.location.reload();
 });
 
 // Différenciation réelle du mode collectif (avant : seul un bandeau de texte
