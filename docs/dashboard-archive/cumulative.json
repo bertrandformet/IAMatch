@@ -294,7 +294,8 @@
         "model": "gpt-oss-120b",
         "count": 5
       }
-    ]
+    ],
+    "boot_id": "b95e85f297464ffda1b9ae2400c6b151"
   },
-  "snapshots_used": 6
+  "snapshots_used": 7
 }
